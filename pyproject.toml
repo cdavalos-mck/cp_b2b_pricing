@@ -15,7 +15,8 @@ dependencies = [
     "kedro-datasets[pandas-csvdataset, pandas-exceldataset, pandas-parquetdataset, plotly-plotlydataset, plotly-jsondataset, matplotlib-matplotlibwriter]>=3.0",
     "kedro-viz>=6.7.0",
     "scikit-learn~=1.5.1",
-    "seaborn~=0.12.1"
+    "seaborn~=0.12.1",
+    "kedro-docker>=0.6.2",
 ]
 
 [project.scripts]
@@ -83,3 +84,6 @@ select = [
     "T201", # Print Statement
 ]
 ignore = ["E501"]  # Ruff format takes care of line-too-long
+
+[tool.kedro_telemetry]
+project_id = "960ffda0f25e4121b05aee971f93e02c"
