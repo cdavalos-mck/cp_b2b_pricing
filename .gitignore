@@ -159,3 +159,13 @@ venv.bak/
 
 # mlflow local runs
 mlruns/*
+
+
+*.csv
+*.tsv
+*.parquet
+*.xlsx
+*.json
+*.pickle
+*.pkl
+
