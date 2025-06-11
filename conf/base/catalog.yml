@@ -39,58 +39,46 @@
 # (transcoding), templating and a way to reuse arguments that are frequently repeated. See more here:
 # https://docs.kedro.org/en/stable/data/data_catalog.html
 
-companies:
-  type: pandas.CSVDataset
-  filepath: data/01_raw/companies.csv
+raw_base_cupon_electronico:
+  type: polars.CSVDataset
+  filepath: data/01_raw/base CE L12M.csv
 
-reviews:
-  type: pandas.CSVDataset
-  filepath: data/01_raw/reviews.csv
+raw_base_tct_tae:
+  type: polars.CSVDataset
+  filepath: data/01_raw/base completa TCT TAE L12M.csv
 
-shuttles:
+raw_base_empresas:
+  type: polars.CSVDataset
+  filepath: data/01_raw/base completa empresas.csv
+
+raw_contratos_tae:
   type: pandas.ExcelDataset
-  filepath: data/01_raw/shuttles.xlsx
+  filepath: data/01_raw/Clientes TAE con fecha de contrato - Inversiones.xlsx
   load_args:
     engine: openpyxl
 
-preprocessed_companies:
-  type: pandas.ParquetDataset
-  filepath: data/02_intermediate/preprocessed_companies.parquet
 
-preprocessed_shuttles:
-  type: pandas.ParquetDataset
-  filepath: data/02_intermediate/preprocessed_shuttles.parquet
+raw_contratos_tct:
+  type: pandas.ExcelDataset
+  filepath: data/01_raw/Clientes TCT contrato_feb2026_RUTS.xlsx
+  load_args:
+    engine: openpyxl
+    sheet_name: FINAL
 
-model_input_table:
-  type: pandas.ParquetDataset
-  filepath: data/03_primary/model_input_table.parquet
+raw_additional_contratos_tae:
+  type: pandas.ExcelDataset
+  filepath: data/01_raw/Clientes TAE con fecha de contrato corregido.xlsx
+  load_args:
+    engine: openpyxl
 
-regressor:
-  type: pickle.PickleDataset
-  filepath: data/06_models/regressor.pickle
-  versioned: true
+raw_competitiveness_index:
+  type: pandas.ExcelDataset
+  filepath: data/01_raw/competitividad.xlsx
 
-shuttle_passenger_capacity_plot_exp:
-  type: plotly.PlotlyDataset
-  filepath: data/08_reporting/shuttle_passenger_capacity_plot_exp.json
-  versioned: true
-  plotly_args:
-    type: bar
-    fig:
-      x: shuttle_type
-      y: passenger_capacity
-      orientation: h
-    layout:
-      xaxis_title: Shuttles
-      yaxis_title: Average passenger capacity
-      title: Shuttle Passenger capacity
-
-shuttle_passenger_capacity_plot_go:
-  type: plotly.JSONDataset
-  filepath: data/08_reporting/shuttle_passenger_capacity_plot_go.json
-  versioned: true
-
-dummy_confusion_matrix:
-  type: matplotlib.MatplotlibWriter
-  filepath: data/08_reporting/dummy_confusion_matrix.png
-  versioned: true
+raw_maestro_data:
+  type: polars.CSVDataset
+  filepath: data/01_raw/maestro_data.csv
+  load_args:
+    separator: ";"
+    infer_schema_length: 10000
+    truncate_ragged_lines: True
