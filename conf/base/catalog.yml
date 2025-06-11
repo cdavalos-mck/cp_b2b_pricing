@@ -82,3 +82,7 @@ raw_maestro_data:
     separator: ";"
     infer_schema_length: 10000
     truncate_ragged_lines: True
+
+raw_patentes:
+  type: polars.CSVDataset
+  filepath: data/01_raw/patentes.csv
