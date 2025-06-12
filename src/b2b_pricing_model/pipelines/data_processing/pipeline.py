@@ -2,6 +2,11 @@ from kedro.pipeline import Pipeline, node, pipeline
 
 from .nodes import (
     preprocess_columns,
+    process_base_cupon_electronico,
+    process_base_empresas,
+    process_base_tae_tct,
+    process_competitiveness_index,
+    process_maestro_data,
 )
 
 
@@ -61,6 +66,36 @@ def create_pipeline(**kwargs) -> Pipeline:
                 inputs="raw_patentes",
                 outputs="int_patentes",
                 name="preprocess_patentes",
+            ),
+            node(
+                func=process_base_tae_tct,
+                inputs="int_base_tct_tae",
+                outputs="prm_base_tct_tae",
+                name="process_base_tct_tae",
+            ),
+            node(
+                func=process_base_cupon_electronico,
+                inputs="int_base_cupon_electronico",
+                outputs="prm_base_cupon_electronico",
+                name="process_base_cupon_electronico",
+            ),
+            node(
+                func=process_base_empresas,
+                inputs="int_base_empresas",
+                outputs="prm_base_empresas",
+                name="process_base_empresas",
+            ),
+            node(
+                func=process_maestro_data,
+                inputs="int_maestro_data",
+                outputs="prm_maestro_data",
+                name="process_maestro_data",
+            ),
+            node(
+                func=process_competitiveness_index,
+                inputs="int_competitiveness_index",
+                outputs="prm_competitiveness_index",
+                name="process_competitiveness_index",
             ),
         ]
     )  # type: ignore
