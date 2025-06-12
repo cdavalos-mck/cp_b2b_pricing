@@ -53,3 +53,73 @@ def clean_column_name(column_name: str) -> str:
     logger.debug("%s -> %s", _old_column_name, column_new)
 
     return column_new
+
+
+def _clean_id(client_id):
+    """
+    Limpia el ID de un cliente removiendo guiones y puntos,
+    y lo regresa como cadena con el prefijo 'id_'.
+
+    Args:
+        client_id (str): Valor numérico del ID del cliente.
+
+    Returns:
+        str: Cadena formateada como 'id_XXXXX'.
+    """
+    client_id = str(client_id)
+    if "-" in client_id:
+        client_id = client_id.split("-")[0].replace(".", "")
+    final_str = "id_" + client_id.strip()
+    final_str = final_str.replace(" ", "").replace("\xa0", "")
+    return final_str
+
+
+def clean_number(s):
+    return re.sub(r"\D", "", s)  # \D matches any non-digit character
+
+
+def _validate_customer_id(customer_id, group_id):
+    """
+    Retorna el ID final del cliente, usando el ID de grupo si existe,
+    o el ID del cliente individual si no existe grupo.
+    """
+    if group_id != "sin_grupo":
+        return group_id
+    else:
+        return customer_id
+
+
+def calculate_weekly_transaction(df: pl.DataFrame) -> pl.DataFrame:
+    """
+    Calculates the percentage of weeks each customer had transactions relative to the total number of weeks.
+
+    Args:
+        df (pl.DataFrame): Input DataFrame with columns 'customer_id' and 'year_week'.
+
+    Returns:
+        pl.DataFrame: A DataFrame with columns:
+                      - 'customer_id'
+                      - 'weeks_transacted'
+                      - 'transaction_week_ratio' (float between 0 and 1)
+    """
+    # Step 1: Get all unique weeks in the dataset
+    all_weeks = df.select("year_week").unique()
+
+    # Step 2: Count total number of weeks in the period
+    total_weeks = all_weeks.height
+
+    # Step 3: Count number of unique weeks per customer
+    weeks_per_customer = (
+        df.select("customer_id", "year_week")
+        .unique()
+        .group_by("customer_id")
+        .len()
+        .rename({"len": "weeks_transacted"})
+    )
+
+    # Step 4: Compute percentage of weeks each customer transacted
+    result = weeks_per_customer.with_columns(
+        [(pl.col("weeks_transacted") / total_weeks).alias("transaction_week_ratio")]
+    )
+
+    return result

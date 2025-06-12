@@ -1,6 +1,17 @@
 from kedro.pipeline import Pipeline, node, pipeline
 
 from .nodes import (
+    create_clients_to_remove,
+    create_master_monthly_tct_trx,
+    create_master_patentes,
+    create_master_transactions,
+    create_master_transactions_tct,
+    create_master_trx_customer_tct,
+    create_master_year_network_trx,
+    create_master_year_region_tct_trx,
+    create_master_year_tct_trx,
+    create_master_yearly_station_tct_trx,
+    create_tct_spine_clientes,
     preprocess_columns,
     process_base_cupon_electronico,
     process_base_empresas,
@@ -96,6 +107,94 @@ def create_pipeline(**kwargs) -> Pipeline:
                 inputs="int_competitiveness_index",
                 outputs="prm_competitiveness_index",
                 name="process_competitiveness_index",
+            ),
+            node(
+                func=create_clients_to_remove,
+                inputs=[
+                    "int_contratos_tae",
+                    "int_contratos_tct",
+                    "int_additional_contratos_tae",
+                ],
+                outputs="prm_clients_to_remove",
+                name="create_clients_to_remove",
+            ),
+            node(
+                func=create_master_transactions,
+                inputs=[
+                    "prm_base_tct_tae",
+                    "prm_base_cupon_electronico",
+                    "prm_maestro_data",
+                    "prm_competitiveness_index",
+                    "prm_clients_to_remove",
+                ],
+                outputs="mst_transactions",
+                name="create_master_transactions",
+            ),
+            node(
+                func=create_master_patentes,
+                inputs=["mst_transactions", "int_patentes"],
+                outputs="master_patentes",
+                name="create_master_patentes",
+            ),
+            node(
+                func=create_master_transactions_tct,
+                inputs="mst_transactions",
+                outputs="mst_transactions_tct",
+                name="process_patentes",
+            ),
+            node(
+                func=create_tct_spine_clientes,
+                inputs=["mst_transactions_tct"],
+                outputs="spine_clientes_tct",
+                name="create_spine_clientes",
+            ),
+            node(
+                func=create_master_year_tct_trx,
+                inputs=["params:customer_master", "mst_transactions_tct"],
+                outputs="master_year_tct_C_trx",
+                name="create_master_year_tct_C_trx",
+            ),
+            node(
+                func=create_master_year_network_trx,
+                inputs=["params:customer_master", "mst_transactions"],
+                outputs="master_year_network_C_trx",
+                name="create_master_year_network_C_trx",
+            ),
+            node(
+                func=create_master_year_region_tct_trx,
+                inputs=[
+                    "params:customer_master",
+                    "mst_transactions",
+                    "master_year_tct_C_trx",
+                ],
+                outputs="master_year_region_tct_trx",
+                name="create_master_year_region_tct_trx",
+            ),
+            node(
+                func=create_master_monthly_tct_trx,
+                inputs=["params:customer_master", "mst_transactions"],
+                outputs="master_month_tct_C_trx",
+                name="create_master_month_tct_C_trx",
+            ),
+            node(
+                func=create_master_yearly_station_tct_trx,
+                inputs=["params:customer_master", "mst_transactions_tct"],
+                outputs="master_yearly_station_tct_trx",
+                name="create_master_yearly_station_tct_trx",
+            ),
+            node(
+                func=create_master_trx_customer_tct,
+                inputs=[
+                    "spine_clientes_tct",
+                    "master_year_tct_C_trx",
+                    "master_year_region_tct_trx",
+                    "master_month_tct_C_trx",
+                    "master_patentes",
+                    "master_yearly_station_tct_trx",
+                    "master_year_network_C_trx",
+                ],
+                outputs="master_trx_customer_tct",
+                name="create_master_trx_customer_tct",
             ),
         ]
     )  # type: ignore

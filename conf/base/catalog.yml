@@ -42,31 +42,38 @@
 raw_base_cupon_electronico:
   type: polars.CSVDataset
   filepath: data/01_raw/base CE L12M.csv
+
 raw_base_tct_tae:
   type: polars.CSVDataset
   filepath: data/01_raw/base completa TCT TAE L12M.csv
+
 raw_base_empresas:
   type: polars.CSVDataset
   filepath: data/01_raw/base completa empresas.csv
+
 raw_contratos_tae:
   type: pandas.ExcelDataset
   filepath: data/01_raw/Clientes TAE con fecha de contrato - Inversiones.xlsx
   load_args:
     engine: openpyxl
+
 raw_contratos_tct:
   type: pandas.ExcelDataset
   filepath: data/01_raw/Clientes TCT contrato_feb2026_RUTS.xlsx
   load_args:
     engine: openpyxl
     sheet_name: FINAL
+
 raw_additional_contratos_tae:
   type: pandas.ExcelDataset
   filepath: data/01_raw/Clientes TAE con fecha de contrato corregido.xlsx
   load_args:
     engine: openpyxl
+
 raw_competitiveness_index:
   type: pandas.ExcelDataset
   filepath: data/01_raw/competitividad.xlsx
+
 raw_maestro_data:
   type: polars.CSVDataset
   filepath: data/01_raw/maestro_data.csv
@@ -74,6 +81,7 @@ raw_maestro_data:
     separator: ";"
     infer_schema_length: 10000
     truncate_ragged_lines: True
+
 raw_patentes:
   type: polars.CSVDataset
   filepath: data/01_raw/patentes.csv

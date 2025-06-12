@@ -1,0 +1,4 @@
+customer_master:
+  key:
+    - customer_id
+  prefix: c_
