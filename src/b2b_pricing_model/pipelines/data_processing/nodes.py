@@ -576,6 +576,8 @@ def create_master_year_region_tct_trx(
     params: dict, mst_transactions: pl.DataFrame, grouped_volume: pl.DataFrame
 ) -> pl.DataFrame:
     """TODO: Add docstring for create_master_year_region_tct_trx function."""
+
+    mst_transactions = mst_transactions.drop_nulls(subset=["codigo_region"])
     df = mst_transactions.with_columns(
         codigo_region=pl.col("codigo_region").cast(pl.String),
     )
