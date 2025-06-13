@@ -1,48 +1,11 @@
+version: '3.9'
+
 services:
-
-  package-build:
+  kedro_app:
     build:
       context: .
-      dockerfile: ./docker/package_build/Dockerfile
-      tags:
-        - "bm-sop-package-build:0.0.1"
-    container_name: package_build
+      dockerfile: Dockerfile
     volumes:
-      - ./dist:/app/dist
-    profiles:
-      - build
-
-  backend:
-    build:
-      context: .
-      dockerfile: ./docker/backend/Dockerfile
-      tags:
-        - "bm-sop-backend:0.0.1"
-    container_name: backend
-    env_file:
-      - "backend.env"
-      - "airflow_api.env"
-      - "aws.env"
-    volumes:
-      - ./backend:/opt/fastapi/backend
-      - ./dist:/opt/fastapi/dist
-      - ./data:/opt/fastapi/data
-    ports:
-      - 8000:8000
-    networks:
-      - bm-sop-network
-    depends_on:
-      postgres:
-        condition: service_healthy
-      airflow-cli:
-        condition: service_completed_successfully
-    restart: always
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8000/health"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-    profiles:
-      - local
-      - dev
-      - qa
+      - ./data:/home/kedro_docker/data  # Mount local data to container
+    working_dir: /home/kedro_docker
+    command: kedro run

@@ -20,6 +20,10 @@ dependencies = [
     "inflection>=0.5.1",
     "kedro-docker>=0.6.2",
     "pre-commit>=4.2.0",
+    "pillow>=11.2.1",
+    "lightgbm>=4.6.0",
+    "catboost>=1.2.8",
+    "optuna>=4.3.0",
 ]
 
 [project.scripts]

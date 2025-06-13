@@ -1,12 +1,74 @@
-model_options:
-  test_size: 0.2
-  random_state: 3
+outliers:
   features:
-    - engines
-    - passenger_capacity
-    - crew
-    - d_check_complete
-    - moon_clearance_complete
-    - iata_approved
-    - company_rating
-    - review_scores_rating
+    target: c_yearly_margin_per_liter
+  z_score_threshold: 3.0
+  base_quantile:
+    lower_quantile: 0
+    upper_quantile: 0.975
+  frequent_clients:
+    min_perc_week_threshold: 0.7
+    days_since_last_trx_threshold: 30
+first_stage:
+  cross_validation:
+    cv_folds: 10
+    scoring:
+      rmse: neg_root_mean_squared_error
+      mae: neg_mean_absolute_error
+      r2: r2
+      mape: neg_mean_absolute_percentage_error
+  threshold: 0.01 # 0.01 A mayor numero mas en Top Performers
+  algorithms:
+    # - lightgbm
+    - catboost
+  optimize_hyperparams: True
+  features:
+    target: c_yearly_margin_per_liter
+    categorical:
+    numerical:
+      comma_columns:
+        - fleet_size
+        # - c_yearly_volumen
+        - c_yearly_network_volumen
+        - c_yearly_avg_volume_per_trx
+        - region_diversity_index
+        - c_weighted_competitive_index
+      percent_columns:
+        # - home_region_ratio
+        - share_customer_region_13
+        - share_customer_region_7
+        - share_customer_region_3
+        - share_customer_region_6
+        - share_customer_region_16
+        - share_customer_region_10
+        - share_customer_region_15
+        - share_customer_region_14
+        - share_customer_region_8
+        - share_customer_region_4
+        - share_customer_region_9
+        - share_customer_region_2
+        - share_customer_region_5
+        - share_customer_region_1
+        - share_customer_region_11
+        - share_customer_region_12
+        - c_tct_yearly_perc_volume
+  hyperparameters:
+    metric: mae
+    n_trials: 10
+    n_splits: 10
+    catboost:
+      depth:
+        type: int
+        low: 10 #2
+        high: 12 #6      # allow deeper trees
+      learning_rate:
+        type: float
+        low: 0.1         # allow slower learning
+        high: 0.3
+      l2_leaf_reg:
+        type: float
+        low: 1      # avoid extremely low values
+        high: 5     # stronger regularization allowed
+      iterations:
+        type: int
+        low: 1000
+        high: 1500

@@ -85,3 +85,10 @@ raw_maestro_data:
 raw_patentes:
   type: polars.CSVDataset
   filepath: data/01_raw/patentes.csv
+
+master_trx_customer_tct:
+  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataSet
+  filepath: data/03_primary/my_polars_data.parquet
+  load_args: {}
+  save_args:
+    compression: "snappy"

@@ -464,8 +464,6 @@ def create_master_transactions(
         ]
     )
 
-    breakpoint()
-
     return df_
 
 
@@ -866,6 +864,16 @@ def create_master_trx_customer_tct(
         / pl.col("c_yearly_network_volumen")
     )
 
-    breakpoint()
+    master_tct_customer = master_tct_customer.with_columns(
+        log_c_yearly_margin=pl.when(pl.col("c_yearly_margin") < 0)
+        .then(pl.lit(0))
+        .otherwise(pl.col("c_yearly_margin"))
+        .map_elements(
+            lambda p: np.log1p(
+                p,
+            ),
+            return_dtype=pl.Float64,
+        )
+    )
 
     return master_tct_customer
