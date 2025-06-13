@@ -464,6 +464,10 @@ def create_master_transactions(
         ]
     )
 
+    df_ = df_.with_columns(
+        codigo_region=pl.col("codigo_region").cast(pl.String),
+    )
+
     return df_
 
 
