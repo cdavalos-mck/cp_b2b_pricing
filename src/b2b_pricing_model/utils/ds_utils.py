@@ -62,6 +62,7 @@ class ModelOptimizer:
             dict: Dictionary containing the best parameters and scores for each algorithm.
         """
 
+        logger.info(f"{data.columns}")
         data = data[data[self.target_feature] > 0]
 
         X = data[self.numerical_features + self.categorical_features]

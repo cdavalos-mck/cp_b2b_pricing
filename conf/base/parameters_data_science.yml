@@ -1,7 +1,7 @@
 outliers:
   features:
     target: c_yearly_margin_per_liter
-  z_score_threshold: 3.0
+  z_score_threshold: 10 # 3
   base_quantile:
     lower_quantile: 0
     upper_quantile: 0.975
@@ -17,15 +17,15 @@ first_stage:
       r2: r2
       mape: neg_mean_absolute_percentage_error
   filter:
-    threshold: 0.01 # 0.01 A mayor numero mas en Top Performers
+    threshold: 0.0 # 0.01 A mayor numero mas en Top Performers
     use_minimum_margin:
-      enabled: true
+      enabled: False
       min_margin_threshold: 20
       min_volume_threshold: 1500000
   algorithms:
     # - lightgbm
     - catboost
-  optimize_hyperparams: False
+  optimize_hyperparams: True
   features:
     target: c_yearly_margin_per_liter
     categorical:
@@ -58,7 +58,7 @@ first_stage:
         - c_tct_yearly_perc_volume
   hyperparameters:
     metric: mae
-    n_trials: 2
+    n_trials: 10
     n_splits: 10
     catboost:
       depth:

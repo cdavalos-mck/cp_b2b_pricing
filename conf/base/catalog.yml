@@ -95,3 +95,7 @@ second_stage_best_hyperparameters:
 default_second_stage_best_hyperparameters:
   type: json.JSONDataset
   filepath: data/06_models/default_second_stage_best_hyperparameters.json
+second_stage_predictions:
+  type: pandas.CSVDataset
+  filepath: data/07_model_output/second_stage_predictions.csv
+  versioned: true

@@ -468,6 +468,11 @@ def create_master_transactions(
         codigo_region=pl.col("codigo_region").cast(pl.String),
     )
 
+    # Filter out empty or null strings
+    df_ = df_.filter(
+        pl.col("codigo_region").is_not_null() & (pl.col("codigo_region") != "")
+    )
+
     return df_
 
 
@@ -577,18 +582,14 @@ def create_master_year_region_tct_trx(
 ) -> pl.DataFrame:
     """TODO: Add docstring for create_master_year_region_tct_trx function."""
 
-    mst_transactions = mst_transactions.drop_nulls(subset=["codigo_region"])
-    df = mst_transactions.with_columns(
-        codigo_region=pl.col("codigo_region").cast(pl.String),
-    )
     # 1. Number of unique regions used per customer
-    region_usage = df.group_by("customer_id").agg(
+    region_usage = mst_transactions.group_by("customer_id").agg(
         number_of_regions_used=pl.col("codigo_region").n_unique()
     )
 
     # 2. Region diversity (entropy) per customer
     entropy_expr = (
-        df.group_by("customer_id", "codigo_region")
+        mst_transactions.group_by("customer_id", "codigo_region")
         .agg(region_count=pl.col("fecha_transaccion").count())
         .group_by("customer_id")
         .agg(
@@ -599,7 +600,7 @@ def create_master_year_region_tct_trx(
     )
 
     # 3. Volume by customer-region
-    region_vol = df.group_by(["customer_id", "codigo_region"]).agg(
+    region_vol = mst_transactions.group_by(["customer_id", "codigo_region"]).agg(
         region_volume=pl.col("volumen").sum()
     )
 
@@ -668,7 +669,7 @@ def create_master_year_region_tct_trx(
     )
 
     # 5.3: Share of customer's volume in region over total volume of that region (i.e., region’s total across all customers)
-    region_total = df.group_by("codigo_region").agg(
+    region_total = mst_transactions.group_by("codigo_region").agg(
         region_total_volume=pl.col("volumen").sum()
     )
 
