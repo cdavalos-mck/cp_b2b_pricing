@@ -573,6 +573,10 @@ def create_master_year_region_tct_trx(
 ) -> pl.DataFrame:
     """TODO: Add docstring for create_master_year_region_tct_trx function."""
 
+    mst_transactions = mst_transactions.with_columns(
+        codigo_region=pl.col("codigo_region").cast(pl.String),
+    )
+
     df = mst_transactions.with_columns(
         codigo_region=pl.col("codigo_region").cast(pl.String),
     ).with_columns(

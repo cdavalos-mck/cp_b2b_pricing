@@ -147,7 +147,7 @@ def predict_first_stage(
     params: dict[str, Any],
     best_first_stage_model,
     train_data: pl.DataFrame,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+) -> tuple[pl.DataFrame, pl.DataFrame, pl.DataFrame]:
     """
     Predict using the first stage model and classify customers as top or under performers.
 
@@ -224,7 +224,11 @@ def predict_first_stage(
         result_data["performance_label"] == "Top Performer"
     ].copy()
 
-    return result_data, under_performers, top_performers
+    return (
+        pl.from_pandas(result_data),
+        pl.from_pandas(under_performers),
+        pl.from_pandas(top_performers),
+    )
 
 
 def predict_second_stage(

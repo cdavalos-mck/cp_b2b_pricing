@@ -2,5 +2,5 @@ services:
   kedro-app:
     container_name: kedro_app
     build: .
-    volumes:
-      - ./data:/home/kedro_docker/data
+    # volumes:
+    #   - /home/jovyan/cp_b2b_pricing/data:/home/kedro_docker/data
