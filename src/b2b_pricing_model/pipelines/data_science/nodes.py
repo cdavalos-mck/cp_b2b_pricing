@@ -234,8 +234,8 @@ def predict_first_stage(
 def predict_second_stage(
     params: dict,
     best_first_stage_model,
-    under_performers: pd.DataFrame,
-    top_performers: pd.DataFrame,
+    under_performers: pl.DataFrame,
+    top_performers: pl.DataFrame,
 ):
     """
     Predict using the first stage model.
@@ -249,11 +249,16 @@ def predict_second_stage(
         tuple: DataFrames of cross-validation results and metrics.
     """
 
-    under_performers["predicted_value"] = best_first_stage_model.predict(
-        X=under_performers
+    under_performers_pd = under_performers.to_pandas()
+    top_performers_pd = top_performers.to_pandas()
+
+    under_performers_pd["predicted_value"] = best_first_stage_model.predict(
+        X=under_performers_pd
     )
-    top_performers["predicted_value"] = best_first_stage_model.predict(X=top_performers)
+    top_performers_pd["predicted_value"] = best_first_stage_model.predict(
+        X=top_performers_pd
+    )
 
-    all_data = pd.concat([under_performers, top_performers], ignore_index=True)
+    all_data = pd.concat([under_performers_pd, top_performers_pd], ignore_index=True)
 
-    return all_data
+    return pl.from_pandas(all_data)

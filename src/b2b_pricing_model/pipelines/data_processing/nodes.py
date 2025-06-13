@@ -576,17 +576,13 @@ def create_master_year_region_tct_trx(
     params: dict, mst_transactions: pl.DataFrame, grouped_volume: pl.DataFrame
 ) -> pl.DataFrame:
     """TODO: Add docstring for create_master_year_region_tct_trx function."""
-
-    mst_transactions = mst_transactions.with_columns(
-        codigo_region=pl.col("codigo_region").cast(pl.String),
-    )
-
     df = mst_transactions.with_columns(
         codigo_region=pl.col("codigo_region").cast(pl.String),
     ).with_columns(
         codigo_region=pl.when(pl.col("codigo_region").is_null())
         .then(pl.lit("sin_region"))
         .otherwise(pl.col("codigo_region"))
+        .cast(pl.String)
     )
     # 1. Number of unique regions used per customer
     region_usage = df.group_by("customer_id").agg(
@@ -632,24 +628,19 @@ def create_master_year_region_tct_trx(
 
     # 5. Pivoted region features
 
+    tmp_volume_pivot = region_vol.pivot(
+        values="region_volume",
+        index="customer_id",
+        on="codigo_region",
+        aggregate_function="first",
+    ).fill_null(pl.lit(0))
+
     # 5.1: Pivot - total volume per region per customer
-    region_volume_pivot = (
-        region_vol.pivot(
-            values="region_volume",
-            index="customer_id",
-            on="codigo_region",
-            aggregate_function="first",
-        )
-        .fill_null(pl.lit(0))
-        .rename(
-            {
-                col: f"total_volume_region_{col}"
-                for col in region_vol.select("codigo_region")
-                .unique()
-                .to_series()
-                .to_list()
-            }
-        )
+    region_volume_pivot = tmp_volume_pivot.rename(
+        {
+            col: f"total_volume_region_{col}"
+            for col in region_vol.select("codigo_region").unique().to_series().to_list()
+        }
     )
 
     # 5.2: Share of customer’s volume in region over total volume of that customer
@@ -670,6 +661,7 @@ def create_master_year_region_tct_trx(
             {
                 col: f"share_customer_region_{col}"
                 for col in region_vol.select("codigo_region")
+                .cast(pl.String)
                 .unique()
                 .to_series()
                 .to_list()
