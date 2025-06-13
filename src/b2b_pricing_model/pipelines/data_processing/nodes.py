@@ -578,11 +578,6 @@ def create_master_year_region_tct_trx(
     """TODO: Add docstring for create_master_year_region_tct_trx function."""
     df = mst_transactions.with_columns(
         codigo_region=pl.col("codigo_region").cast(pl.String),
-    ).with_columns(
-        codigo_region=pl.when(pl.col("codigo_region").is_null())
-        .then(pl.lit("sin_region"))
-        .otherwise(pl.col("codigo_region"))
-        .cast(pl.String)
     )
     # 1. Number of unique regions used per customer
     region_usage = df.group_by("customer_id").agg(
