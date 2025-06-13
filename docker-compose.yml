@@ -1,11 +1,6 @@
-version: '3.9'
-
 services:
-  kedro_app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  kedro-app:
+    container_name: kedro_app
+    build: .
     volumes:
-      - ./data:/home/kedro_docker/data  # Mount local data to container
-    working_dir: /home/kedro_docker
-    command: kedro run
+      - ./data:/home/kedro_docker/data

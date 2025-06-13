@@ -819,7 +819,7 @@ def create_master_yearly_station_tct_trx(
     return master_station
 
 
-def create_master_trx_customer_tct(
+def create_master_trx_customer_tct(  # noqa: PLR0913
     customer_spine: pl.DataFrame,
     master_year_tct_C_trx: pl.DataFrame,
     master_year_region_tct_trx: pl.DataFrame,

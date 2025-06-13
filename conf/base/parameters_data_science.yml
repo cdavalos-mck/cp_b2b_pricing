@@ -16,11 +16,16 @@ first_stage:
       mae: neg_mean_absolute_error
       r2: r2
       mape: neg_mean_absolute_percentage_error
-  threshold: 0.01 # 0.01 A mayor numero mas en Top Performers
+  filter:
+    threshold: 0.01 # 0.01 A mayor numero mas en Top Performers
+    use_minimum_margin:
+      enabled: true
+      min_margin_threshold: 20
+      min_volume_threshold: 1500000
   algorithms:
     # - lightgbm
     - catboost
-  optimize_hyperparams: True
+  optimize_hyperparams: False
   features:
     target: c_yearly_margin_per_liter
     categorical:
@@ -53,7 +58,7 @@ first_stage:
         - c_tct_yearly_perc_volume
   hyperparameters:
     metric: mae
-    n_trials: 10
+    n_trials: 2
     n_splits: 10
     catboost:
       depth:
@@ -62,12 +67,12 @@ first_stage:
         high: 12 #6      # allow deeper trees
       learning_rate:
         type: float
-        low: 0.1         # allow slower learning
+        low: 0.1 # allow slower learning
         high: 0.3
       l2_leaf_reg:
         type: float
-        low: 1      # avoid extremely low values
-        high: 5     # stronger regularization allowed
+        low: 1 # avoid extremely low values
+        high: 5 # stronger regularization allowed
       iterations:
         type: int
         low: 1000

@@ -2,6 +2,8 @@
 #    uv pip compile pyproject.toml -o requirements.txt
 aiofiles==24.1.0
     # via kedro-viz
+alembic==1.16.1
+    # via optuna
 annotated-types==0.7.0
     # via pydantic
 antlr4-python3-runtime==4.9.3
@@ -47,6 +49,8 @@ build==1.2.2.post1
     # via kedro
 cachetools==6.0.0
     # via kedro
+catboost==1.2.8
+    # via b2b-pricing-model (pyproject.toml)
 certifi==2025.4.26
     # via
     #   httpcore
@@ -68,6 +72,8 @@ click==8.1.8
     #   uvicorn
 click-default-group==1.2.4
     # via kedro-viz
+colorlog==6.9.0
+    # via optuna
 comm==0.2.2
     # via
     #   ipykernel
@@ -112,6 +118,8 @@ gitpython==3.1.44
     # via kedro
 graphql-core==3.2.6
     # via strawberry-graphql
+graphviz==0.20.3
+    # via catboost
 h11==0.16.0
     # via
     #   httpcore
@@ -232,14 +240,20 @@ kiwisolver==1.4.8
     # via matplotlib
 lazy-loader==0.4
     # via kedro-datasets
+lightgbm==4.6.0
+    # via b2b-pricing-model (pyproject.toml)
+mako==1.3.10
+    # via alembic
 markdown-it-py==3.0.0
     # via rich
 markupsafe==3.0.2
     # via
     #   jinja2
+    #   mako
     #   nbconvert
 matplotlib==3.10.3
     # via
+    #   catboost
     #   kedro-datasets
     #   seaborn
 matplotlib-inline==0.1.7
@@ -277,8 +291,11 @@ notebook-shim==0.2.4
     #   notebook
 numpy==2.3.0
     # via
+    #   catboost
     #   contourpy
+    #   lightgbm
     #   matplotlib
+    #   optuna
     #   pandas
     #   scikit-learn
     #   scipy
@@ -287,6 +304,8 @@ omegaconf==2.3.0
     # via kedro
 openpyxl==3.1.5
     # via kedro-datasets
+optuna==4.3.0
+    # via b2b-pricing-model (pyproject.toml)
 orjson==3.10.18
     # via kedro-viz
 overrides==7.7.0
@@ -303,11 +322,13 @@ packaging==25.0
     #   lazy-loader
     #   matplotlib
     #   nbconvert
+    #   optuna
     #   plotly
     #   pytoolconfig
     #   strawberry-graphql
 pandas==2.3.0
     # via
+    #   catboost
     #   kedro-datasets
     #   kedro-viz
     #   seaborn
@@ -322,7 +343,9 @@ pathspec==0.12.1
 pexpect==4.9.0
     # via ipython
 pillow==11.2.1
-    # via matplotlib
+    # via
+    #   b2b-pricing-model (pyproject.toml)
+    #   matplotlib
 platformdirs==4.3.8
     # via
     #   jupyter-core
@@ -330,6 +353,7 @@ platformdirs==4.3.8
     #   virtualenv
 plotly==5.24.1
     # via
+    #   catboost
     #   kedro-datasets
     #   kedro-viz
 pluggy==1.6.0
@@ -394,6 +418,7 @@ pyyaml==6.0.2
     #   jupyter-events
     #   kedro
     #   omegaconf
+    #   optuna
     #   pre-commit
     #   uvicorn
 pyzmq==26.4.0
@@ -436,7 +461,10 @@ ruamel-yaml-clib==0.2.12
 scikit-learn==1.5.2
     # via b2b-pricing-model (pyproject.toml)
 scipy==1.15.3
-    # via scikit-learn
+    # via
+    #   catboost
+    #   lightgbm
+    #   scikit-learn
 seaborn==0.12.2
     # via b2b-pricing-model (pyproject.toml)
 secure==1.0.1
@@ -451,6 +479,7 @@ setuptools==80.9.0
     #   jupyterlab
 six==1.17.0
     # via
+    #   catboost
     #   python-dateutil
     #   rfc3339-validator
 smmap==5.0.2
@@ -460,7 +489,10 @@ sniffio==1.3.1
 soupsieve==2.7
     # via beautifulsoup4
 sqlalchemy==2.0.41
-    # via kedro-viz
+    # via
+    #   alembic
+    #   kedro-viz
+    #   optuna
 stack-data==0.6.3
     # via ipython
 starlette==0.46.2
@@ -489,6 +521,8 @@ tornado==6.5.1
     #   jupyterlab
     #   notebook
     #   terminado
+tqdm==4.67.1
+    # via optuna
 traitlets==5.14.3
     # via
     #   comm
@@ -508,6 +542,7 @@ types-python-dateutil==2.9.0.20250516
     # via arrow
 typing-extensions==4.14.0
     # via
+    #   alembic
     #   anyio
     #   beautifulsoup4
     #   fastapi

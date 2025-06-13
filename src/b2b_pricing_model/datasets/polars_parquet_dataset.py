@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import polars as pl
 from kedro.io.core import AbstractDataset
@@ -9,8 +9,8 @@ class PolarsParquetDataSet(AbstractDataset):
     def __init__(
         self,
         filepath: str,
-        load_args: Dict[str, Any] = None,
-        save_args: Dict[str, Any] = None,
+        load_args: dict[str, Any] = None,
+        save_args: dict[str, Any] = None,
     ):
         self._filepath = Path(filepath)
         self._load_args = load_args or {}
@@ -22,5 +22,5 @@ class PolarsParquetDataSet(AbstractDataset):
     def _save(self, data: pl.DataFrame) -> None:
         data.write_parquet(self._filepath, **self._save_args)
 
-    def _describe(self) -> Dict[str, Any]:
+    def _describe(self) -> dict[str, Any]:
         return dict(filepath=str(self._filepath))

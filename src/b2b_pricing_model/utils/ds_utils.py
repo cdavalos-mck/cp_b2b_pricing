@@ -8,10 +8,7 @@ import pandas as pd
 from catboost import CatBoostRegressor
 from optuna.samplers import TPESampler
 from sklearn.compose import ColumnTransformer
-from sklearn.model_selection import (
-    KFold,
-    cross_val_score,
-)
+from sklearn.model_selection import KFold, cross_val_score, cross_validate
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
@@ -260,6 +257,146 @@ class ModelOptimizer:
             logger.info(
                 f"Trial {trial.number}: Best score so far: {study.best_value:.4f}"
             )
+
+
+class RegressionModel:
+    """
+    A class for optimizing hyperparameters of regression models using Optuna.
+    """
+
+    def __init__(
+        self, params: dict, best_hyperparameters: dict, random_state: int = 42
+    ):
+        self.categorical_features = params["features"]["categorical"]
+        if not self.categorical_features:
+            logger.warning(
+                "No categorical features provided. Using default empty list."
+            )
+            self.categorical_features = []
+        self.numerical_features = params.get("features", {}).get("numerical", {}).get(
+            "comma_columns", []
+        ) + params.get("features", {}).get("numerical", {}).get("percent_columns", [])
+        self.target_feature = params.get("features", {}).get("target", None)
+        self.best_hyperparameters = best_hyperparameters
+        self.algorithms = params.get("algorithms", [])
+        self.random_state = random_state
+        cross_validation = params.get("cross_validation", {})
+        self.n_splits = cross_validation.get("cv_folds", 5)
+        self.scoring = cross_validation.get("scoring", ["rmse"])
+
+    def train_model(self, data: pd.DataFrame):
+        data = data[data[self.target_feature] > 0]
+        X = data[self.numerical_features + self.categorical_features]
+        y = data[self.target_feature]
+
+        revenue = X["c_yearly_network_volumen"]  # * y
+
+        # weight = np.log1p(revenue)
+        weight = revenue / revenue.sum()
+
+        cv_results = {}
+        pipeline_list = {}
+
+        for algorithm_name in self.algorithms:
+            if algorithm_name not in MODELS:
+                logger.warning(f"Unknown algorithm: {algorithm_name}. Skipping...")
+                continue
+
+            logger.info(f"Training {algorithm_name}...")
+
+            try:
+                params_config = self.best_hyperparameters[algorithm_name]["best_params"]
+                pipeline = _create_pipeline(
+                    algorithm_name=algorithm_name,
+                    algorithm_params=params_config,
+                    categorical_features=self.categorical_features,
+                    numerical_features=self.numerical_features,
+                )
+
+                preprocessor = pipeline.named_steps["preprocessor"]
+                preprocessor.fit(X)
+
+                # Get transformed feature names
+                feature_names = preprocessor.get_feature_names_out()
+
+                monotone_constraints = [0] * len(feature_names)
+                for idx, fname in enumerate(feature_names):
+                    if fname.endswith(
+                        "c_yearly_network_volumen"
+                    ):  # or fname == "num__volume" if you know the prefix
+                        monotone_constraints[idx] = 0
+
+                # if algorithm_name.lower() == "lightgbm":
+                #     params_config["monotone_constraints"] = monotone_constraints
+                # elif algorithm_name.lower() == "catboost":
+                #     params_config["monotone_constraints"] = monotone_constraints
+
+                pipeline = _create_pipeline(
+                    algorithm_name=algorithm_name,
+                    algorithm_params=params_config,
+                    categorical_features=self.categorical_features,
+                    numerical_features=self.numerical_features,
+                )
+
+                model_cv_results = self._run_cross_validation(
+                    model_pipeline=pipeline,
+                    X=X,
+                    y=y,
+                    scoring_funcs=self.scoring,
+                    weight=weight,
+                )
+
+                pipeline.fit(X, y, regressor__sample_weight=weight)
+
+                cv_results[algorithm_name] = model_cv_results
+                pipeline_list[algorithm_name] = pipeline
+
+                logger.info(f"{algorithm_name} training completed successfully.")
+            except Exception as e:
+                logger.error(f"Error training {algorithm_name}: {str(e)}")
+                continue
+
+        return cv_results, pipeline_list
+
+    def _run_cross_validation(
+        self,
+        model_pipeline: Pipeline,
+        X: pd.DataFrame,
+        y: pd.Series,
+        weight: np.ndarray,
+        scoring_funcs: list[str] = ["rmse"],
+    ) -> pd.DataFrame:
+        """
+        Run cross-validation on the model pipeline.
+
+        Args:
+            model_pipeline (Pipeline): The scikit-learn pipeline with the model.
+            X (pd.DataFrame): Features.
+            y (pd.Series): Target variable.
+            n_splits (int): Number of splits for cross-validation.
+            scoring_funcs (list[str]): List of scoring functions to use.
+
+        Returns:
+            pd.DataFrame: DataFrame containing cross-validation results.
+        """
+        # groups = X["cluster"]
+        cv = KFold(n_splits=self.n_splits, shuffle=True, random_state=self.random_state)
+        # sgkf = StratifiedKFold(
+        #     n_splits=self.n_splits, shuffle=True, random_state=self.random_state
+        # )
+        # splits = list(sgkf.split(X, groups))
+        splits = list(cv.split(X, y))
+        cv_results = cross_validate(
+            model_pipeline,
+            X,
+            y,
+            cv=splits,  # pass list of (train_idx, test_idx)
+            scoring=scoring_funcs,
+            fit_params={"regressor__sample_weight": weight},
+            return_train_score=True,
+            n_jobs=-1,
+        )
+        return pd.DataFrame(cv_results)
 
 
 def _get_base_params(algorithm_name: str, random_state: int) -> dict[str, Any]:
