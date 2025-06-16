@@ -140,7 +140,11 @@ def train_model(
         f"Best model selected: {best_model} with test MAE: {summary_df.loc[best_model, 'test_mae']:.4f}"
     )
 
-    return combined_df, summary_df, pipeline_list[best_model]
+    return (
+        pl.from_pandas(combined_df),
+        pl.from_pandas(summary_df),
+        pipeline_list[best_model],
+    )
 
 
 def predict_first_stage(

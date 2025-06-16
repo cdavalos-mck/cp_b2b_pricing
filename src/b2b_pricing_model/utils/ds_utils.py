@@ -9,8 +9,14 @@ from catboost import CatBoostRegressor
 from optuna.samplers import TPESampler
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import KFold, cross_val_score, cross_validate
+from sklearn.neighbors import NearestNeighbors
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import (
+    MinMaxScaler,
+    OneHotEncoder,
+    RobustScaler,
+    StandardScaler,
+)
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -419,6 +425,8 @@ def _get_base_params(algorithm_name: str, random_state: int) -> dict[str, Any]:
             "verbose": False,
             "random_seed": random_state,
             "thread_count": -1,
+            "allow_writing_files": False,
+            "task_type": "CPU",
         }
     else:
         return {}
@@ -511,3 +519,99 @@ def _create_preprocessing_pipeline(
     )
 
     return preprocessor
+
+
+class ClusteringPipeline:
+    """
+    A comprehensive pipeline for clustering analysis that includes:
+    - Data preprocessing
+    - Optimal cluster number selection using multiple metrics
+    - Multiple clustering algorithms
+    - Cluster evaluation
+    - Visualization with PCA and t-SNE
+    - Minimum cluster size constraints
+    - k-Nearest Neighbors search for each point
+    """
+
+    def __init__(
+        self,
+        algorithm: str,
+        min_cluster_size: int,
+        k_range: range,
+        random_state=42,
+    ):
+        self.algorithm = algorithm
+        self.min_cluster_size = min_cluster_size
+        self.k_range = k_range
+        self.random_state = random_state
+        self.preprocessor = None
+        self.best_k = None
+        self.best_model = None
+        self.labels = None
+        self.silhouette_scores = {}
+        self.calinski_scores = {}
+        self.davies_bouldin_scores = {}
+        self.min_cluster_size_scores = {}
+        self.pca = None
+        self.tsne = None
+        self.pca_result = None
+        self.tsne_result = None
+        self.X_scaled = None  # store for later use
+
+    def preprocess_data(self, X, method="standard", **kwargs):
+        if method == "standard":
+            self.preprocessor = StandardScaler(**kwargs)
+        elif method == "robust":
+            self.preprocessor = RobustScaler(**kwargs)
+        elif method == "minmax":
+            self.preprocessor = MinMaxScaler(**kwargs)
+        else:
+            raise ValueError("Method must be 'standard', 'robust', or 'minmax'")
+        self.X_scaled = self.preprocessor.fit_transform(X)
+        return self.X_scaled
+
+    def get_k_nearest_neighbors(self, k=3, customer_ids=None, metric="euclidean"):
+        """
+        Find k-nearest neighbors for each sample in the preprocessed data.
+
+        Parameters
+        ----------
+        k : int
+            Number of neighbors to return (excluding the point itself).
+        customer_ids : list or array-like, optional
+            List of IDs corresponding to the rows in the data.
+        metric : str
+            Distance metric to use.
+
+        Returns
+        -------
+        DataFrame with each point's neighbors and distances.
+        """
+        if self.X_scaled is None:
+            raise ValueError("You must call preprocess_data before getting neighbors.")
+
+        knn = NearestNeighbors(n_neighbors=k + 1, metric=metric)
+        knn.fit(self.X_scaled)
+        distances, indices = knn.kneighbors(self.X_scaled)
+
+        if customer_ids is None:
+            customer_ids = list(range(len(self.X_scaled)))
+        customer_ids = np.array(customer_ids)
+
+        records = []
+        for i, (neighbor_idxs, dists) in enumerate(zip(indices, distances)):
+            src_id = customer_ids[i]
+            for rank, (neighbor_idx, dist) in enumerate(
+                zip(neighbor_idxs[1:], dists[1:]), start=1
+            ):
+                neighbor_id = customer_ids[neighbor_idx]
+                records.append(
+                    {
+                        "customer_id": src_id,
+                        "neighbor_id": neighbor_id,
+                        "rank": rank,
+                        "distance": dist,
+                    }
+                )
+
+        return pd.DataFrame(records)

@@ -391,6 +391,10 @@ def create_master_transactions(
         "0": "sin_descuento",
     }
 
+    prm_base_tct_tae = prm_base_tct_tae.with_columns(
+        codigo_region=pl.col("codigo_region").cast(pl.Int64)
+    )
+
     df_ = pl.concat([prm_base_tct_tae, prm_base_cupon_electronico], how="diagonal")
 
     df_ = df_.with_columns(
@@ -873,5 +877,10 @@ def create_master_trx_customer_tct(  # noqa: PLR0913
             return_dtype=pl.Float64,
         )
     )
+
+    # Select float columns
+    master_tct_customer = master_tct_customer.filter(
+        pl.col("c_weighted_competitive_index").is_not_nan()
+    )  # TODO: Fix Master to avoid NANs
 
     return master_tct_customer

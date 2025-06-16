@@ -1,3 +1,6 @@
-"""Complete Data Processing pipeline for the spaceflights tutorial"""
-
-from .pipeline import create_pipeline  # NOQA
+# noqa: E402, F401
+from .pipeline import (
+    create_pipeline,
+    create_pricing_pipeline,
+    create_segments_pipeline,
+)

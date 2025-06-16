@@ -78,8 +78,8 @@ raw_patentes:
   type: polars.CSVDataset
   filepath: data/01_raw/patentes.csv
 master_trx_customer_tct:
-  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataSet
-  filepath: data/03_primary/my_polars_data.parquet
+  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
+  filepath: data/03_primary/master_trx_customer_tct.parquet
   load_args: {}
   save_args:
     compression: "snappy"
@@ -95,7 +95,45 @@ second_stage_best_hyperparameters:
 default_second_stage_best_hyperparameters:
   type: json.JSONDataset
   filepath: data/06_models/default_second_stage_best_hyperparameters.json
+
+first_stage_cv_results:
+  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
+  filepath: data/07_model_output/first_stage_cv_results.parquet
+  load_args: {}
+  save_args:
+    compression: "snappy"
+
+first_stage_summary_df:
+  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
+  filepath: data/07_model_output/first_stage_summary_df.parquet
+  load_args: {}
+  save_args:
+    compression: "snappy"
+
+second_stage_cv_results:
+  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
+  filepath: data/07_model_output/second_stage_cv_results.parquet
+  load_args: {}
+  save_args:
+    compression: "snappy"
+
+second_stage_summary_df:
+  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
+  filepath: data/07_model_output/second_stage_summary_df.parquet
+  load_args: {}
+  save_args:
+    compression: "snappy"
+
+first_stage_predictions:
+  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
+  filepath: data/07_model_output/first_stage_predictions.parquet
+  load_args: {}
+  save_args:
+    compression: "snappy"
+
 second_stage_predictions:
-  type: pandas.CSVDataset
-  filepath: data/07_model_output/second_stage_predictions.csv
-  versioned: true
+  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
+  filepath: data/07_model_output/second_stage_predictions.parquet
+  load_args: {}
+  save_args:
+    compression: "snappy"

@@ -8,6 +8,40 @@ outliers:
   frequent_clients:
     min_perc_week_threshold: 0.7
     days_since_last_trx_threshold: 30
+clustering:
+  algorithm: kmeans
+  min_cluster_size: 1
+  k_range: [15, 25]
+  features:
+    numeric:
+      comma_columns:
+        - fleet_size
+        # - c_yearly_volumen
+        - c_yearly_network_volumen
+        - c_yearly_avg_volume_per_trx
+        - region_diversity_index
+        - c_weighted_competitive_index
+      percent_columns:
+        - share_customer_region_13
+        - share_customer_region_7
+        - share_customer_region_3
+        - share_customer_region_6
+        - share_customer_region_16
+        - share_customer_region_10
+        - share_customer_region_15
+        - share_customer_region_14
+        - share_customer_region_8
+        - share_customer_region_4
+        - share_customer_region_9
+        - share_customer_region_2
+        - share_customer_region_5
+        - share_customer_region_1
+        - share_customer_region_11
+        - share_customer_region_12
+        - c_tct_yearly_perc_volume
+    categorical:
+  standardize_method: standard
+  k_neighbors: 5
 first_stage:
   cross_validation:
     cv_folds: 10
@@ -17,7 +51,7 @@ first_stage:
       r2: r2
       mape: neg_mean_absolute_percentage_error
   filter:
-    threshold: 0.0 # 0.01 A mayor numero mas en Top Performers
+    threshold: 0.00 # 0.01 A mayor numero mas en Top Performers
     use_minimum_margin:
       enabled: False
       min_margin_threshold: 20
@@ -32,13 +66,11 @@ first_stage:
     numerical:
       comma_columns:
         - fleet_size
-        # - c_yearly_volumen
         - c_yearly_network_volumen
         - c_yearly_avg_volume_per_trx
         - region_diversity_index
         - c_weighted_competitive_index
       percent_columns:
-        # - home_region_ratio
         - share_customer_region_13
         - share_customer_region_7
         - share_customer_region_3
@@ -58,7 +90,7 @@ first_stage:
         - c_tct_yearly_perc_volume
   hyperparameters:
     metric: mae
-    n_trials: 10
+    n_trials: 2
     n_splits: 10
     catboost:
       depth:
@@ -92,7 +124,7 @@ second_stage:
   features:
     target: c_yearly_margin_per_liter
     categorical:
-      # - bin_fleet_size TODO: Data Leakage
+      # - bin_fleet_size
       # - bin_volume
       # - cluster
     numerical:
@@ -101,7 +133,7 @@ second_stage:
         # - c_yearly_volumen
         - c_yearly_network_volumen
         # - c_yearly_avg_volume_per_trx
-        - region_diversity_index
+        # - region_diversity_index
         - c_weighted_competitive_index
       percent_columns:
         # - home_region_ratio
@@ -124,7 +156,7 @@ second_stage:
         - c_tct_yearly_perc_volume
   hyperparameters:
     metric: mae
-    n_trials: 10
+    n_trials: 2
     n_splits: 10
     catboost:
       depth:

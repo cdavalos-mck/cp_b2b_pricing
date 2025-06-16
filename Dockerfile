@@ -8,6 +8,7 @@ RUN pip install uv
 # install project requirements
 COPY requirements.txt /tmp/requirements.txt
 RUN uv pip install --system --no-cache-dir -r /tmp/requirements.txt && rm -f /tmp/requirements.txt
+RUN apt-get update && apt-get install -y libgomp1
 
 # add kedro user
 ARG KEDRO_UID=999

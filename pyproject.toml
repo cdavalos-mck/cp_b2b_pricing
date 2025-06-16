@@ -24,6 +24,7 @@ dependencies = [
     "lightgbm>=4.6.0",
     "catboost>=1.2.8",
     "optuna>=4.3.0",
+    "yellowbrick>=1.5",
 ]
 
 [project.scripts]

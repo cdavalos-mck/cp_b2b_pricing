@@ -1,99 +1,21 @@
-from kedro.pipeline import Pipeline, node, pipeline
+from kedro.pipeline import Pipeline
 
-from .nodes import (
-    create_master_base,
-    get_best_hyperparameters,
-    predict_first_stage,
-    predict_second_stage,
-    train_model,
+from b2b_pricing_model.pipelines.data_science.customer_segments import (
+    pipeline as segments_pipeline,
+)
+from b2b_pricing_model.pipelines.data_science.pricing_model import (
+    pipeline as pricing_pipeline,
 )
 
 
 def create_pipeline(**kwargs) -> Pipeline:
-    return pipeline(
-        [
-            node(
-                func=create_master_base,
-                inputs=["params:outliers", "master_trx_customer_tct"],
-                outputs=[
-                    "non_regular_clients_tct",
-                    "regular_base_clients_tct",
-                    "regular_outlier_clients_tct",
-                ],
-                name="create_master_base_tct",
-            ),
-            node(
-                func=get_best_hyperparameters,
-                inputs=[
-                    "params:first_stage",
-                    "regular_base_clients_tct",
-                    "default_first_stage_best_hyperparameters",
-                ],
-                outputs="first_stage_best_hyperparameters",
-                name="get_first_stage_best_hyperparameters",
-            ),
-            node(
-                func=train_model,
-                inputs=[
-                    "params:first_stage",
-                    "first_stage_best_hyperparameters",
-                    "regular_base_clients_tct",
-                ],
-                outputs=[
-                    "first_stage_cv_results",
-                    "first_stage_summary_df",
-                    "best_first_stage_model",
-                ],
-                name="train_first_stage_model",
-            ),
-            node(
-                func=predict_first_stage,
-                inputs=[
-                    "params:first_stage",
-                    "best_first_stage_model",
-                    "regular_base_clients_tct",
-                ],
-                outputs=[
-                    "first_stage_predictions",
-                    "under_performers",
-                    "top_performers",
-                ],
-                name="predict_first_stage",
-            ),
-            node(
-                func=get_best_hyperparameters,
-                inputs=[
-                    "params:second_stage",
-                    "top_performers",
-                    "default_second_stage_best_hyperparameters",
-                ],
-                outputs="second_stage_best_hyperparameters",
-                name="get_second_stage_best_hyperparameters",
-            ),
-            node(
-                func=train_model,
-                inputs=[
-                    "params:second_stage",
-                    "second_stage_best_hyperparameters",
-                    "top_performers",
-                ],
-                outputs=[
-                    "second_stage_cv_results",
-                    "second_stage_summary_df",
-                    "best_second_stage_model",
-                ],
-                name="train_second_stage_model",
-            ),
-            node(
-                func=predict_second_stage,
-                inputs=[
-                    "params:second_stage",
-                    "best_second_stage_model",
-                    "under_performers",
-                    "top_performers",
-                ],
-                outputs="second_stage_predictions",
-                name="predict_second_stage",
-            ),
-        ]
-    )  # type: ignore
+    ds_pipe = pricing_pipeline.create_pipeline() + segments_pipeline.create_pipeline()
+    return ds_pipe
+
+
+def create_pricing_pipeline(**kwargs) -> Pipeline:
+    return pricing_pipeline.create_pipeline()
+
+
+def create_segments_pipeline(**kwargs) -> Pipeline:
+    return segments_pipeline.create_pipeline()
