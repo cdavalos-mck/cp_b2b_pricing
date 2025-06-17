@@ -13,15 +13,18 @@ clustering:
   min_cluster_size: 1
   k_range: [15, 25]
   features:
-    numeric:
+    target: c_yearly_margin_per_liter
+    categorical:
+    numerical:
       comma_columns:
-        - fleet_size
+        # - fleet_size
         # - c_yearly_volumen
         - c_yearly_network_volumen
-        - c_yearly_avg_volume_per_trx
-        - region_diversity_index
+        # - c_yearly_avg_volume_per_trx
+        # - region_diversity_index
         - c_weighted_competitive_index
       percent_columns:
+        # - home_region_ratio
         - share_customer_region_13
         - share_customer_region_7
         - share_customer_region_3
@@ -39,7 +42,6 @@ clustering:
         - share_customer_region_11
         - share_customer_region_12
         - c_tct_yearly_perc_volume
-    categorical:
   standardize_method: standard
   k_neighbors: 5
 first_stage:

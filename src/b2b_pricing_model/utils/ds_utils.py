@@ -561,13 +561,22 @@ class ClusteringPipeline:
     def preprocess_data(self, X, method="standard", **kwargs):
         if method == "standard":
             self.preprocessor = StandardScaler(**kwargs)
+            self.X_scaled = self.preprocessor.fit_transform(X)
         elif method == "robust":
             self.preprocessor = RobustScaler(**kwargs)
+            self.X_scaled = self.preprocessor.fit_transform(X)
         elif method == "minmax":
-            self.preprocessor = MinMaxScaler(**kwargs)
+            # Apply feature-wise MinMaxScaler manually
+            self.preprocessor = {}
+            self.X_scaled = pd.DataFrame(index=X.index, columns=X.columns)
+            for col in X.columns:
+                scaler = MinMaxScaler(**kwargs)
+                self.X_scaled[col] = scaler.fit_transform(X[[col]])
+                self.preprocessor[col] = scaler
+            self.X_scaled = self.X_scaled.astype(float).values
         else:
             raise ValueError("Method must be 'standard', 'robust', or 'minmax'")
-        self.X_scaled = self.preprocessor.fit_transform(X)
+
         return self.X_scaled
 
     def get_k_nearest_neighbors(self, k=3, customer_ids=None, metric="euclidean"):
@@ -598,6 +607,7 @@ class ClusteringPipeline:
             customer_ids = list(range(len(self.X_scaled)))
         customer_ids = np.array(customer_ids)
 
+        breakpoint
         records = []
         for i, (neighbor_idxs, dists) in enumerate(zip(indices, distances)):
             src_id = customer_ids[i]
@@ -615,3 +625,120 @@ class ClusteringPipeline:
                 )
 
         return pd.DataFrame(records)
+
+    def get_k_nearest_top_performers(
+        self,
+        k=3,
+        customer_ids=None,
+        metric="euclidean",
+        performance_labels=None,
+        top_label="Top Performer",
+    ):
+        """
+        Find k-nearest neighbors for each customer, but only include neighbors that are labeled as 'Top Performer'.
+
+        Parameters
+        ----------
+        k : int
+            Number of top performer neighbors to return (excluding the point itself).
+        customer_ids : list or array-like, optional
+            List of customer IDs corresponding to self.X_scaled.
+        metric : str
+            Distance metric to use.
+        performance_labels : list or array-like
+            List of labels (same length as X_scaled), indicating performance group of each customer.
+        top_label : str
+            Label used to identify top performers.
+
+        Returns
+        -------
+        DataFrame with each point's nearest top performer neighbors and distances.
+        """
+        if self.X_scaled is None:
+            raise ValueError("You must call preprocess_data before getting neighbors.")
+        if performance_labels is None:
+            raise ValueError("You must provide performance labels for filtering.")
+
+        knn = NearestNeighbors(
+            n_neighbors=len(self.X_scaled), metric=metric
+        )  # Use full set
+        knn.fit(self.X_scaled)
+        distances, indices = knn.kneighbors(self.X_scaled)
+
+        if customer_ids is None:
+            customer_ids = list(range(len(self.X_scaled)))
+        customer_ids = np.array(customer_ids)
+        performance_labels = np.array(performance_labels)
+
+        records = []
+        for i, (neighbor_idxs, dists) in enumerate(zip(indices, distances)):
+            src_id = customer_ids[i]
+            # Skip self index and filter only top performers
+            filtered = [
+                (neighbor_idx, dist)
+                for neighbor_idx, dist in zip(neighbor_idxs[1:], dists[1:])
+                if performance_labels[neighbor_idx] == top_label
+            ][:k]  # Only top k top performers
+
+            for rank, (neighbor_idx, dist) in enumerate(filtered, start=1):
+                neighbor_id = customer_ids[neighbor_idx]
+                records.append(
+                    {
+                        "customer_id": src_id,
+                        "neighbor_id": neighbor_id,
+                        "rank": rank,
+                        "distance": dist,
+                    }
+                )
+
+        return pd.DataFrame(records)
+
+
+def explain_neighbors_original_scale(
+    customer_idx, neighbor_indices, X_scaled, X_original, feature_names
+):
+    # Use scaled data for distance calculations
+    X_scaled_pd = X_scaled.set_index("customer_id")
+    X_original = X_original.set_index("customer_id")
+
+    feature_names_extra = feature_names + [
+        "c_yearly_margin_per_liter",
+        "predicted_value",
+        "performance_label",
+    ]
+
+    customer_scaled = X_scaled_pd.loc[customer_idx, feature_names]
+    neighbors_scaled = X_scaled_pd.loc[neighbor_indices, feature_names]
+
+    # Get original values for display
+    customer_original = X_original.loc[customer_idx, feature_names]
+    neighbors_original = X_original.loc[neighbor_indices, feature_names]
+
+    # Calculate distances using scaled data
+    feature_distances_scaled = np.abs(customer_scaled - neighbors_scaled)
+    avg_feature_distances = np.mean(feature_distances_scaled, axis=0)
+
+    # Create explanation with original values
+    explanation = pd.DataFrame(
+        {
+            "feature": feature_names,
+            "customer_value": customer_original,
+            "avg_neighbor_value": np.mean(neighbors_original, axis=0),
+            "scaled_customer_value": customer_scaled,
+            "scaled_avg_neighbor_value": np.mean(neighbors_scaled, axis=0),
+            "scaled_distance": avg_feature_distances,
+            "value_difference": np.abs(
+                customer_original - np.mean(neighbors_original, axis=0)
+            ),
+        }
+    ).sort_values("scaled_distance")
+
+    neighbor_indices = np.append(
+        neighbor_indices, customer_idx
+    )  # Include the customer itself in neighbors
+
+    neighbors_original = X_original.loc[neighbor_indices, feature_names_extra]
+
+    neighbors_original.reset_index(inplace=True)
+
+    return explanation, neighbors_original

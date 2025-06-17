@@ -137,3 +137,11 @@ second_stage_predictions:
   load_args: {}
   save_args:
     compression: "snappy"
+
+explanation:
+  type: pandas.CSVDataset
+  filepath: data/07_model_output/explanation.csv
+
+closest_customers_detail:
+  type: pandas.CSVDataset
+  filepath: data/07_model_output/closest_customers_detail.csv

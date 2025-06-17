@@ -25,6 +25,7 @@ dependencies = [
     "catboost>=1.2.8",
     "optuna>=4.3.0",
     "yellowbrick>=1.5",
+    "dash>=3.0.4",
 ]
 
 [project.scripts]
