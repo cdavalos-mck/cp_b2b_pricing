@@ -117,7 +117,15 @@ def train_model(
     regression_model = RegressionModel(
         params=params, best_hyperparameters=best_hyperparameters, random_state=42
     )
-    cv_results, pipeline_list = regression_model.train_model(data=data.to_pandas())
+    (
+        cv_results,
+        pipeline_list,
+        shap_list,
+        customer_ids,
+        feature_names,
+        explainer_list,
+        X,
+    ) = regression_model.train_model(data=data.to_pandas())
 
     # Step 1: Compute the summary per model
     summary = {}
@@ -144,6 +152,11 @@ def train_model(
         pl.from_pandas(combined_df),
         pl.from_pandas(summary_df),
         pipeline_list[best_model],
+        shap_list[best_model],
+        customer_ids,
+        feature_names,
+        explainer_list[best_model],
+        X,
     )
 
 
@@ -264,5 +277,16 @@ def predict_second_stage(
     )
 
     all_data = pd.concat([under_performers_pd, top_performers_pd], ignore_index=True)
+
+    all_data["corrected_predicted_value"] = all_data.apply(
+        lambda row: row["predicted_value"]
+        if row["predicted_value"] > row["c_yearly_margin_per_liter"]
+        else row["c_yearly_margin_per_liter"],
+        axis=1,
+    )
+
+    all_data["margin_change"] = (
+        all_data["corrected_predicted_value"] - all_data["c_yearly_margin_per_liter"]
+    )
 
     return pl.from_pandas(all_data)

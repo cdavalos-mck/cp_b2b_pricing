@@ -26,6 +26,10 @@ dependencies = [
     "optuna>=4.3.0",
     "yellowbrick>=1.5",
     "dash>=3.0.4",
+    "s3fs>=0.4.2",
+    "fsspec>=2025.5.1",
+    "boto3>=1.38.37",
+    "shap>=0.48.0",
 ]
 
 [project.scripts]

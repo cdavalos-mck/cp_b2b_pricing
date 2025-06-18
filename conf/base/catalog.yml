@@ -145,3 +145,24 @@ explanation:
 closest_customers_detail:
   type: pandas.CSVDataset
   filepath: data/07_model_output/closest_customers_detail.csv
+
+second_stage_shap_value:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_shap_value.pkl
+
+# Save picle
+second_stage_customer_id:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_customer_id.pkl
+
+second_stage_feature_names:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_feature_names.pkl
+
+second_stage_explainer:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_explainer.pkl
+
+second_stage_X:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_X.pkl

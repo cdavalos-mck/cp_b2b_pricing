@@ -93,7 +93,7 @@ first_stage:
   hyperparameters:
     metric: mae
     n_trials: 2
-    n_splits: 10
+    n_splits: 2
     catboost:
       depth:
         type: int
@@ -159,7 +159,7 @@ second_stage:
   hyperparameters:
     metric: mae
     n_trials: 2
-    n_splits: 10
+    n_splits: 2
     catboost:
       depth:
         type: int

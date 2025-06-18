@@ -5,6 +5,7 @@ import lightgbm as lgb
 import numpy as np
 import optuna
 import pandas as pd
+import shap
 from catboost import CatBoostRegressor
 from optuna.samplers import TPESampler
 from sklearn.compose import ColumnTransformer
@@ -294,6 +295,7 @@ class RegressionModel:
     def train_model(self, data: pd.DataFrame):
         data = data[data[self.target_feature] > 0]
         X = data[self.numerical_features + self.categorical_features]
+        customer_id = data["customer_id"]
         y = data[self.target_feature]
 
         revenue = X["c_yearly_network_volumen"]  # * y
@@ -303,6 +305,8 @@ class RegressionModel:
 
         cv_results = {}
         pipeline_list = {}
+        shap_list = {}
+        explainer_list = {}
 
         for algorithm_name in self.algorithms:
             if algorithm_name not in MODELS:
@@ -355,15 +359,31 @@ class RegressionModel:
 
                 pipeline.fit(X, y, regressor__sample_weight=weight)
 
+                X_transformed = preprocessor.transform(X)
+
+                model = pipeline.named_steps["regressor"]
+                explainer = shap.TreeExplainer(model)
+                shap_values = explainer.shap_values(X_transformed)
+
                 cv_results[algorithm_name] = model_cv_results
                 pipeline_list[algorithm_name] = pipeline
+                shap_list[algorithm_name] = shap_values
+                explainer_list[algorithm_name] = explainer
 
                 logger.info(f"{algorithm_name} training completed successfully.")
             except Exception as e:
                 logger.error(f"Error training {algorithm_name}: {str(e)}")
                 continue
 
-        return cv_results, pipeline_list
+        return (
+            cv_results,
+            pipeline_list,
+            shap_list,
+            customer_id,
+            feature_names,
+            explainer_list,
+            X,
+        )
 
     def _run_cross_validation(
         self,
@@ -704,6 +724,7 @@ def explain_neighbors_original_scale(
     feature_names_extra = feature_names + [
         "c_yearly_margin_per_liter",
         "predicted_value",
+        "corrected_predicted_value",
         "performance_label",
     ]
 
