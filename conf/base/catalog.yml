@@ -166,3 +166,10 @@ second_stage_explainer:
 second_stage_X:
   type: pickle.PickleDataset
   filepath: data/07_model_output/second_stage_X.pkl
+
+non_regular_clients_predictions:
+  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
+  filepath: data/07_model_output/non_regular_clients_predictions.parquet
+  load_args: {}
+  save_args:
+    compression: "snappy"

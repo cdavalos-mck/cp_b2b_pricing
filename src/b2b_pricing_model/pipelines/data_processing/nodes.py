@@ -489,6 +489,7 @@ def create_master_transactions_tct(
 
     master_transactions_tct = mst_transactions.filter(
         pl.col("negocio_final").is_in(["TCT"])
+        # pl.col("negocio_final").is_in(["TAE", "TAE retiro"])
     )
 
     return master_transactions_tct
@@ -723,7 +724,7 @@ def create_master_monthly_tct_trx(
     prefix = params["prefix"]
 
     # Create a unique DataFrame with year and customer-station combinations
-    master_monthly_tct_CS_trx = mst_transactions.group_by(key + ["ano_mes"]).agg(
+    master_monthly_tct_trx = mst_transactions.group_by(key + ["ano_mes"]).agg(
         pl.col("volumen").sum().alias("monthly_volume"),
         pl.col("monto_cobrado").sum().alias("monthly_charged_amount"),
         pl.col("margen_neto").sum().alias("monthly_margin"),
@@ -732,12 +733,12 @@ def create_master_monthly_tct_trx(
         pl.col("id_estacion").n_unique().alias("monthly_stations_count"),
     )
 
-    master_monthly_tct_CS_trx = master_monthly_tct_CS_trx.with_columns(
+    master_monthly_tct_trx = master_monthly_tct_trx.with_columns(
         perc_of_volume_potential=pl.col("monthly_volume")
         / pl.col("monthly_volume").max().over(key),
     )
 
-    master_avg_monthly_tct_CS_trx = master_monthly_tct_CS_trx.group_by(key).agg(
+    master_monthly_tct_trx = master_monthly_tct_trx.group_by(key).agg(
         pl.col("monthly_volume").mean().alias("monthly_avg_volume"),
         pl.col("monthly_volume").std().alias("monthly_std_volume"),
         pl.col("monthly_trx_count").mean().alias("monthly_avg_trx_count"),
@@ -754,17 +755,21 @@ def create_master_monthly_tct_trx(
         .alias("monthly_std_perc_of_volume_potential"),
     )
 
+    master_monthly_tct_trx = master_monthly_tct_trx.with_columns(
+        annualized_network_monthly_volume=pl.col("monthly_avg_volume") * 12,
+    )
+
     # Add prefix to all columns except the key columns
     key_cols = key if isinstance(key, list) else [key]
-    master_avg_monthly_tct_CS_trx = master_avg_monthly_tct_CS_trx.rename(
+    master_monthly_tct_trx = master_monthly_tct_trx.rename(
         {
             col: f"{prefix}{col}"
-            for col in master_avg_monthly_tct_CS_trx.columns
+            for col in master_monthly_tct_trx.columns
             if col not in key_cols
         }
     )
 
-    return master_avg_monthly_tct_CS_trx
+    return master_monthly_tct_trx
 
 
 def create_master_patentes(

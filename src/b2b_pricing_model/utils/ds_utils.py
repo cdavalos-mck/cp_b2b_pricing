@@ -619,15 +619,14 @@ class ClusteringPipeline:
         if self.X_scaled is None:
             raise ValueError("You must call preprocess_data before getting neighbors.")
 
-        knn = NearestNeighbors(n_neighbors=k + 1, metric=metric)
+        # knn = NearestNeighbors(n_neighbors=k + 1, metric=metric)
+        knn = NearestNeighbors(radius=0.1, metric=metric)
         knn.fit(self.X_scaled)
-        distances, indices = knn.kneighbors(self.X_scaled)
+        distances, indices = knn.radius_neighbors(self.X_scaled)
 
         if customer_ids is None:
             customer_ids = list(range(len(self.X_scaled)))
         customer_ids = np.array(customer_ids)
-
-        breakpoint
         records = []
         for i, (neighbor_idxs, dists) in enumerate(zip(indices, distances)):
             src_id = customer_ids[i]
@@ -644,23 +643,27 @@ class ClusteringPipeline:
                     }
                 )
 
+        breakpoint()
+
         return pd.DataFrame(records)
 
-    def get_k_nearest_top_performers(
+    def get_k_nearest_top_performers(  # noqa: PLR0913
         self,
-        k=3,
+        k=5,
         customer_ids=None,
         metric="euclidean",
         performance_labels=None,
         top_label="Top Performer",
+        radius=0.1,
     ):
         """
-        Find k-nearest neighbors for each customer, but only include neighbors that are labeled as 'Top Performer'.
+        Find top performer neighbors for each customer. Prioritize using radius-based neighbors;
+        fall back to k-nearest neighbors if none found within radius.
 
         Parameters
         ----------
         k : int
-            Number of top performer neighbors to return (excluding the point itself).
+            Number of top performer neighbors to return (if radius yields none).
         customer_ids : list or array-like, optional
             List of customer IDs corresponding to self.X_scaled.
         metric : str
@@ -669,6 +672,8 @@ class ClusteringPipeline:
             List of labels (same length as X_scaled), indicating performance group of each customer.
         top_label : str
             Label used to identify top performers.
+        radius : float
+            Radius for neighborhood search.
 
         Returns
         -------
@@ -679,28 +684,42 @@ class ClusteringPipeline:
         if performance_labels is None:
             raise ValueError("You must provide performance labels for filtering.")
 
-        knn = NearestNeighbors(
-            n_neighbors=len(self.X_scaled), metric=metric
-        )  # Use full set
-        knn.fit(self.X_scaled)
-        distances, indices = knn.kneighbors(self.X_scaled)
-
         if customer_ids is None:
             customer_ids = list(range(len(self.X_scaled)))
         customer_ids = np.array(customer_ids)
         performance_labels = np.array(performance_labels)
 
-        records = []
-        for i, (neighbor_idxs, dists) in enumerate(zip(indices, distances)):
-            src_id = customer_ids[i]
-            # Skip self index and filter only top performers
-            filtered = [
-                (neighbor_idx, dist)
-                for neighbor_idx, dist in zip(neighbor_idxs[1:], dists[1:])
-                if performance_labels[neighbor_idx] == top_label
-            ][:k]  # Only top k top performers
+        radius_knn = NearestNeighbors(radius=radius, metric=metric)
+        radius_knn.fit(self.X_scaled)
+        radius_distances, radius_indices = radius_knn.radius_neighbors(self.X_scaled)
 
-            for rank, (neighbor_idx, dist) in enumerate(filtered, start=1):
+        knn = NearestNeighbors(n_neighbors=k + 1, metric=metric)  # +1 to include self
+        knn.fit(self.X_scaled)
+        knn_distances, knn_indices = knn.kneighbors(self.X_scaled)
+
+        records = []
+        for i, (r_idxs, r_dists) in enumerate(zip(radius_indices, radius_distances)):
+            src_id = customer_ids[i]
+
+            # Filter radius-based neighbors
+            radius_filtered = [
+                (idx, dist)
+                for idx, dist in zip(r_idxs, r_dists)
+                if idx != i and performance_labels[idx] == top_label
+            ][:10]
+
+            if radius_filtered:
+                selected_neighbors = radius_filtered
+            else:
+                # Use k-nearest neighbors if radius search yields none
+                k_idxs, k_dists = knn_indices[i], knn_distances[i]
+                selected_neighbors = [
+                    (idx, dist)
+                    for idx, dist in zip(k_idxs[1:], k_dists[1:])  # skip self
+                    if performance_labels[idx] == top_label
+                ][:k]
+
+            for rank, (neighbor_idx, dist) in enumerate(selected_neighbors, start=1):
                 neighbor_id = customer_ids[neighbor_idx]
                 records.append(
                     {

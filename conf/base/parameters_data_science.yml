@@ -1,13 +1,13 @@
 outliers:
   features:
     target: c_yearly_margin_per_liter
-  z_score_threshold: 10 # 3
+  z_score_threshold: 3 # 3
   base_quantile:
     lower_quantile: 0
     upper_quantile: 0.975
   frequent_clients:
-    min_perc_week_threshold: 0.7
-    days_since_last_trx_threshold: 30
+    min_perc_week_threshold: 0.8
+    days_since_last_trx_threshold: 60
 clustering:
   algorithm: kmeans
   min_cluster_size: 1
@@ -61,7 +61,7 @@ first_stage:
   algorithms:
     # - lightgbm
     - catboost
-  optimize_hyperparams: True
+  optimize_hyperparams: False
   features:
     target: c_yearly_margin_per_liter
     categorical:
@@ -92,8 +92,8 @@ first_stage:
         - c_tct_yearly_perc_volume
   hyperparameters:
     metric: mae
-    n_trials: 2
-    n_splits: 2
+    n_trials: 30
+    n_splits: 10
     catboost:
       depth:
         type: int

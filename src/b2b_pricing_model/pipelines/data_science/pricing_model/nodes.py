@@ -3,6 +3,7 @@ from typing import Any, Optional
 
 import pandas as pd
 import polars as pl
+import shap
 from scipy.stats import zscore
 
 from b2b_pricing_model.utils.ds_utils import ModelOptimizer, RegressionModel
@@ -152,11 +153,6 @@ def train_model(
         pl.from_pandas(combined_df),
         pl.from_pandas(summary_df),
         pipeline_list[best_model],
-        shap_list[best_model],
-        customer_ids,
-        feature_names,
-        explainer_list[best_model],
-        X,
     )
 
 
@@ -253,6 +249,7 @@ def predict_second_stage(
     best_first_stage_model,
     under_performers: pl.DataFrame,
     top_performers: pl.DataFrame,
+    non_regular_clients_tct: pl.DataFrame,
 ):
     """
     Predict using the first stage model.
@@ -268,6 +265,11 @@ def predict_second_stage(
 
     under_performers_pd = under_performers.to_pandas()
     top_performers_pd = top_performers.to_pandas()
+    non_regular_clients_tct = non_regular_clients_tct.to_pandas()
+
+    non_regular_clients_tct["c_yearly_network_volumen"] = non_regular_clients_tct[
+        "c_annualized_network_monthly_volume"
+    ]
 
     under_performers_pd["predicted_value"] = best_first_stage_model.predict(
         X=under_performers_pd
@@ -276,7 +278,16 @@ def predict_second_stage(
         X=top_performers_pd
     )
 
-    all_data = pd.concat([under_performers_pd, top_performers_pd], ignore_index=True)
+    non_regular_clients_tct["predicted_value"] = best_first_stage_model.predict(
+        X=non_regular_clients_tct
+    )
+
+    non_regular_clients_tct["performance_label"] = "Non Regular Client"
+
+    all_data = pd.concat(
+        [under_performers_pd, top_performers_pd, non_regular_clients_tct],
+        ignore_index=True,
+    )
 
     all_data["corrected_predicted_value"] = all_data.apply(
         lambda row: row["predicted_value"]
@@ -289,4 +300,21 @@ def predict_second_stage(
         all_data["corrected_predicted_value"] - all_data["c_yearly_margin_per_liter"]
     )
 
-    return pl.from_pandas(all_data)
+    model = best_first_stage_model.named_steps["regressor"]
+    explainer = shap.TreeExplainer(model)
+    preprocessor = best_first_stage_model.named_steps["preprocessor"]
+    X_transformed = preprocessor.transform(all_data)
+    shap_values = explainer.shap_values(X_transformed)
+    customer_id = all_data["customer_id"]
+    feature_names = preprocessor.get_feature_names_out()
+    cleaned = [name.split("__")[1] for name in feature_names]
+    X = all_data[cleaned]
+
+    return (
+        pl.from_pandas(all_data),
+        shap_values,
+        customer_id,
+        feature_names,
+        explainer,
+        X,
+    )

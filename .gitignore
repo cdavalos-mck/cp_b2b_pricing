@@ -172,3 +172,4 @@ mlruns/*
 *.tmp
 catboost_info/learn/events.out.tfevents
 *.tfevents
+catboost_info/*
