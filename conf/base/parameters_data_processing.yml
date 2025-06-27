@@ -1,3 +1,4 @@
+channel: tae  # default value
 customer_master:
   key:
     - customer_id

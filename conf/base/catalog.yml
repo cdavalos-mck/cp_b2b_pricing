@@ -39,6 +39,14 @@
 # (transcoding), templating and a way to reuse arguments that are frequently repeated. See more here:
 # https://docs.kedro.org/en/stable/data/data_catalog.html
 
+raw_base_industrial:
+  type: polars.CSVDataset
+  filepath: data/01_raw/base_industrial.csv
+  load_args:
+    separator: ","
+    infer_schema_length: 10000
+    truncate_ragged_lines: True
+
 raw_base_cupon_electronico:
   type: polars.CSVDataset
   filepath: data/01_raw/base CE L12M.csv
@@ -79,93 +87,160 @@ raw_patentes:
   filepath: data/01_raw/patentes.csv
 master_trx_customer_tct:
   type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
-  filepath: data/03_primary/master_trx_customer_tct.parquet
+  filepath: data/03_primary/master_trx_customer_tct_${globals:channel}.parquet
   load_args: {}
   save_args:
     compression: "snappy"
+
+master_industrial:
+  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
+  filepath: data/03_primary/master_industrial.parquet
+  load_args: {}
+  save_args:
+    compression: "snappy"
+
 default_first_stage_best_hyperparameters:
   type: json.JSONDataset
   filepath: data/06_models/default_first_stage_best_hyperparameters.json
+
+default_first_stage_best_hyperparameters_industrial:
+  type: json.JSONDataset
+  filepath: data/06_models/default_first_stage_best_hyperparameters_industrial.json
+
 first_stage_best_hyperparameters:
   type: json.JSONDataset
-  filepath: data/06_models/first_stage_best_hyperparameters.json
+  filepath: data/06_models/first_stage_best_hyperparameters_${globals:channel}.json
+
 second_stage_best_hyperparameters:
   type: json.JSONDataset
-  filepath: data/06_models/second_stage_best_hyperparameters.json
+  filepath: data/06_models/second_stage_best_hyperparameters_${globals:channel}.json
+
 default_second_stage_best_hyperparameters:
   type: json.JSONDataset
-  filepath: data/06_models/default_second_stage_best_hyperparameters.json
+  filepath: data/06_models/default_second_stage_best_hyperparameters_${globals:channel}.json
+
+default_second_stage_best_hyperparameters_industrial:
+  type: json.JSONDataset
+  filepath: data/06_models/default_second_stage_best_hyperparameters_industrial_${globals:channel}.json
 
 first_stage_cv_results:
   type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
-  filepath: data/07_model_output/first_stage_cv_results.parquet
+  filepath: data/07_model_output/first_stage_cv_results_${globals:channel}.parquet
   load_args: {}
   save_args:
     compression: "snappy"
 
 first_stage_summary_df:
   type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
-  filepath: data/07_model_output/first_stage_summary_df.parquet
+  filepath: data/07_model_output/first_stage_summary_d_${globals:channel}.parquet
   load_args: {}
   save_args:
     compression: "snappy"
 
 second_stage_cv_results:
   type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
-  filepath: data/07_model_output/second_stage_cv_results.parquet
+  filepath: data/07_model_output/second_stage_cv_results_${globals:channel}.parquet
+  load_args: {}
+  save_args:
+    compression: "snappy"
+
+second_stage_industrial_cv_results:
+  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
+  filepath: data/07_model_output/second_stage_industrial_cv_results_${globals:channel}.parquet
   load_args: {}
   save_args:
     compression: "snappy"
 
 second_stage_summary_df:
   type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
-  filepath: data/07_model_output/second_stage_summary_df.parquet
+  filepath: data/07_model_output/second_stage_summary_df_${globals:channel}.parquet
+  load_args: {}
+  save_args:
+    compression: "snappy"
+
+second_stage_industrial_summary_df:
+  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
+  filepath: data/07_model_output/second_stage_industrial_summary_df_${globals:channel}.parquet
   load_args: {}
   save_args:
     compression: "snappy"
 
 first_stage_predictions:
   type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
-  filepath: data/07_model_output/first_stage_predictions.parquet
+  filepath: data/07_model_output/first_stage_predictions_${globals:channel}.parquet
   load_args: {}
   save_args:
     compression: "snappy"
 
 second_stage_predictions:
   type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
-  filepath: data/07_model_output/second_stage_predictions.parquet
+  filepath: data/07_model_output/second_stage_predictions_${globals:channel}.parquet
+  load_args: {}
+  save_args:
+    compression: "snappy"
+
+second_stage_industrial_predictions:
+  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
+  filepath: data/07_model_output/second_stage_presecond_stage_industrial_predictionsdictions_${globals:channel}.parquet
   load_args: {}
   save_args:
     compression: "snappy"
 
 explanation:
   type: pandas.CSVDataset
-  filepath: data/07_model_output/explanation.csv
+  filepath: data/07_model_output/explanation_${globals:channel}.csv
+
+explanation_industrial:
+  type: pandas.CSVDataset
+  filepath: data/07_model_output/explanation_industrial.csv
 
 closest_customers_detail:
   type: pandas.CSVDataset
   filepath: data/07_model_output/closest_customers_detail.csv
 
+closest_customers_detail_industrial:
+  type: pandas.CSVDataset
+  filepath: data/07_model_output/closest_customers_detail_industrial.csv
+
 second_stage_shap_value:
   type: pickle.PickleDataset
   filepath: data/07_model_output/second_stage_shap_value.pkl
 
-# Save picle
+second_stage_industrial_shap_value:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_industrial_shap_value.pkl
+
 second_stage_customer_id:
   type: pickle.PickleDataset
   filepath: data/07_model_output/second_stage_customer_id.pkl
+
+second_stage_industrial_customer_id:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_industrial_customer_id.pkl
 
 second_stage_feature_names:
   type: pickle.PickleDataset
   filepath: data/07_model_output/second_stage_feature_names.pkl
 
+second_stage_industrial_feature_names:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_industrial_feature_names.pkl
+
 second_stage_explainer:
   type: pickle.PickleDataset
   filepath: data/07_model_output/second_stage_explainer.pkl
 
+second_stage_industrial_explainer:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_industrial_explainer.pkl
+
 second_stage_X:
   type: pickle.PickleDataset
   filepath: data/07_model_output/second_stage_X.pkl
+
+second_stage_industrial_X:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_industrial_X.pkl
 
 non_regular_clients_predictions:
   type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset

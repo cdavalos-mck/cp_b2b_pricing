@@ -55,6 +55,49 @@ def clean_column_name(column_name: str) -> str:
     return column_new
 
 
+def clean_string_value(value: str) -> str:
+    """
+    Standardizes string values by:
+    - Lowercasing
+    - Replacing spaces and special characters with underscores or meaningful text
+    - Removing accents and normalizing unicode
+
+    Args:
+        value (str): Original string.
+
+    Returns:
+        str: Cleaned string.
+    """
+    original_value = value
+
+    # Underscore formatting
+    value = inflection.underscore(value.strip())
+
+    # Remove accents and normalize
+    value = (
+        unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("utf-8")
+    )
+
+    # Custom replacements
+    value = value.replace("(%)", "_percent")
+    value = re.sub(r"%", "percent", value)
+    value = value.replace("?", "question")
+    value = re.sub(r"[-]+", "minus", value)
+    value = re.sub(r"[/]+", "by", value)
+    value = re.sub(r"#", "number", value)
+    value = re.sub(r"[&+]+", "and", value)
+    value = re.sub(r"[|,;]+", "or", value)
+    value = re.sub(r"[ :_\.,;{}()'\n\t=]+", "_", value)
+
+    # Clean up multiple/trailing underscores
+    value = re.sub(r"__+", "_", value)
+    value = value.strip("_")
+
+    logger.debug("%s -> %s", original_value, value)
+
+    return value
+
+
 def _clean_id(client_id):
     """
     Limpia el ID de un cliente removiendo guiones y puntos,

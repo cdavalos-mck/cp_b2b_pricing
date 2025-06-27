@@ -33,7 +33,7 @@ def create_master_base(
     )
 
     # Compute z-score of log_c_yearly_margin
-    margin_series = regular_clients.select("log_c_yearly_margin").to_series().to_numpy()
+    margin_series = regular_clients.select("log_revenue").to_series().to_numpy()
     z_scores = zscore(margin_series, nan_policy="omit")
 
     regular_clients = regular_clients.with_columns(

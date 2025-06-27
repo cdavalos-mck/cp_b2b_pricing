@@ -6,6 +6,9 @@ from b2b_pricing_model.pipelines.data_science.customer_segments import (
 from b2b_pricing_model.pipelines.data_science.pricing_model import (
     pipeline as pricing_pipeline,
 )
+from b2b_pricing_model.pipelines.data_science.princing_model_industrial import (
+    pipeline as pricing_industrial_pipeline,
+)
 
 
 def create_pipeline(**kwargs) -> Pipeline:
@@ -15,6 +18,10 @@ def create_pipeline(**kwargs) -> Pipeline:
 
 def create_pricing_pipeline(**kwargs) -> Pipeline:
     return pricing_pipeline.create_pipeline()
+
+
+def create_pricing_industrial_pipeline(**kwargs) -> Pipeline:
+    return pricing_industrial_pipeline.create_pipeline()
 
 
 def create_segments_pipeline(**kwargs) -> Pipeline:

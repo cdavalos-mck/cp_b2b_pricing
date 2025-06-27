@@ -10,6 +10,7 @@ from b2b_pricing_model.utils.dp_utils import (
     _validate_customer_id,
     calculate_weekly_transaction,
     clean_polars_column_names,
+    clean_string_value,
 )
 
 logger = logging.getLogger(__name__)
@@ -101,6 +102,35 @@ def process_base_tae_tct(df: pl.DataFrame) -> pl.DataFrame:
         raise Exception("Duplicated rows found")
 
     return df_
+
+
+def process_base_industrial(df: pl.DataFrame) -> pl.DataFrame:
+    """
+    TODO: Add docstring for process_base_industrial function.
+    """
+
+    df = df.with_columns(
+        pl.when(pl.col("localidad").is_null())
+        .then(pl.lit("Sin Localidad"))
+        .otherwise(pl.col("localidad"))
+        .alias("localidad")
+    )
+
+    df = df.with_columns(
+        pl.col("planta_deposito")
+        .map_elements(clean_string_value)
+        .alias("planta_deposito")
+    )
+
+    df = df.with_columns(
+        pl.col("localidad").map_elements(clean_string_value).alias("localidad")
+    )
+
+    df = df.with_columns(
+        pl.col("region").map_elements(clean_string_value).alias("region")
+    )
+
+    return df
 
 
 def process_base_cupon_electronico(df: pl.DataFrame) -> pl.DataFrame:
@@ -480,22 +510,39 @@ def create_master_transactions(
     return df_
 
 
-def create_master_transactions_tct(
+def create_master_transactions_channel(
+    channel: str,
     mst_transactions: pl.DataFrame,
 ) -> pl.DataFrame:
     """
     TODO: Add docstring for create_master_transactions_tct function.
     """
 
-    master_transactions_tct = mst_transactions.filter(
-        pl.col("negocio_final").is_in(["TCT"])
-        # pl.col("negocio_final").is_in(["TAE", "TAE retiro"])
-    )
+    if channel == "tct":
+        # Filter transactions for TCT channel
+        mst_transactions = mst_transactions.filter(
+            pl.col("negocio_final").is_in(["TCT"])
+        )
+    elif channel == "tae":
+        # Filter transactions for TAE channel
+        mst_transactions = mst_transactions.filter(
+            pl.col("negocio_final").is_in(["TAE", "TAE retiro"])
+        )
+    elif channel == "ce":
+        # Filter transactions for CE channel
+        mst_transactions = mst_transactions.filter(
+            pl.col("negocio_final").is_in(["CE"])
+        )
+    else:
+        # Raise an error if the channel is not recognized
+        raise ValueError(
+            f"Channel '{channel}' is not recognized. Use 'tct', 'tae', or 'ce'."
+        )
 
-    return master_transactions_tct
+    return mst_transactions
 
 
-def create_tct_spine_clientes(df_transactions: pl.DataFrame) -> pl.DataFrame:
+def create_spine_clientes(df_transactions: pl.DataFrame) -> pl.DataFrame:
     """
     TODO: Add docstring for create_spine_clientes function.
     """
@@ -505,7 +552,7 @@ def create_tct_spine_clientes(df_transactions: pl.DataFrame) -> pl.DataFrame:
     return spine_clientes
 
 
-def create_master_year_tct_trx(
+def create_master_year_channel_trx(
     params: dict, mst_transactions: pl.DataFrame
 ) -> pl.DataFrame:
     """
@@ -582,7 +629,7 @@ def create_master_year_network_trx(
     return master_year_network_trx
 
 
-def create_master_year_region_tct_trx(
+def create_master_year_region_channel_trx(
     params: dict, mst_transactions: pl.DataFrame, grouped_volume: pl.DataFrame
 ) -> pl.DataFrame:
     """TODO: Add docstring for create_master_year_region_tct_trx function."""
@@ -872,6 +919,17 @@ def create_master_trx_customer_tct(  # noqa: PLR0913
     )
 
     master_tct_customer = master_tct_customer.with_columns(
+        revenue=pl.col("c_yearly_network_volumen") * pl.col("c_yearly_margin_per_liter")
+    ).with_columns(
+        log_revenue=pl.col("revenue").map_elements(
+            lambda p: np.log1p(
+                p,
+            ),
+            return_dtype=pl.Float64,
+        )
+    )
+
+    master_tct_customer = master_tct_customer.with_columns(
         log_c_yearly_margin=pl.when(pl.col("c_yearly_margin") < 0)
         .then(pl.lit(0))
         .otherwise(pl.col("c_yearly_margin"))
@@ -888,4 +946,158 @@ def create_master_trx_customer_tct(  # noqa: PLR0913
         pl.col("c_weighted_competitive_index").is_not_nan()
     )  # TODO: Fix Master to avoid NANs
 
+    master_tct_customer = master_tct_customer.sort("customer_id")
     return master_tct_customer
+
+
+def create_master_industrial(
+    spine_industrial: pl.DataFrame,
+    master_total_industrial: pl.DataFrame,
+    master_region_industrial: pl.DataFrame,
+    master_location_industrial: pl.DataFrame,
+    master_planta_industrial: pl.DataFrame,
+) -> pl.DataFrame:
+    """TODO: Add docstring for create_master_industrial function."""
+    master_industrial = spine_industrial.join(
+        master_total_industrial, on="customer_id", how="left"
+    )
+
+    master_industrial = master_industrial.join(
+        master_region_industrial, on="customer_id", how="left"
+    )
+
+    master_industrial = master_industrial.join(
+        master_location_industrial, on="customer_id", how="left"
+    )
+
+    master_industrial = master_industrial.join(
+        master_planta_industrial, on="customer_id", how="left"
+    )
+
+    # Fill nulls with 0
+    master_industrial = master_industrial.fill_null(0)
+
+    master_industrial = master_industrial.filter(pl.col("total_volume") > 0)
+    master_industrial = master_industrial.filter(pl.col("total_revenue") > 0)
+
+    return master_industrial
+
+
+def create_master_total_industrial(
+    prm_base_industrial: pl.DataFrame,
+) -> pl.DataFrame:
+    """
+    TODO: Add docstring for create_master_total_industrial function.
+    """
+
+    total_per_customer = prm_base_industrial.group_by("customer_id").agg(
+        [
+            pl.col("volume").sum().alias("total_volume"),
+            pl.col("revenue").sum().alias("total_revenue"),
+        ]
+    )
+
+    total_per_customer = total_per_customer.with_columns(
+        log_revenue=pl.col("total_revenue").map_elements(
+            lambda p: np.log1p(
+                p,
+            ),
+            return_dtype=pl.Float64,
+        )
+    )
+
+    total_per_customer = total_per_customer.with_columns(
+        c_yearly_margin_per_liter=pl.col("total_revenue") / pl.col("total_volume")
+    )
+
+    return total_per_customer
+
+
+def create_master_region_industrial(
+    prm_base_industrial: pl.DataFrame,
+    total_per_customer: pl.DataFrame,
+) -> pl.DataFrame:
+    """TODO: Add docstring for create_master_region_industrial function."""
+
+    region_share = (
+        prm_base_industrial.group_by(["customer_id", "region"])
+        .agg(pl.sum("volume").alias("volume_region"))
+        .join(total_per_customer, on="customer_id")
+        .with_columns(
+            (pl.col("volume_region") / pl.col("total_volume")).alias("region_share")
+        )
+        .select(["customer_id", "region", "region_share"])
+        .pivot(values="region_share", index="customer_id", columns="region")
+        .fill_null(pl.lit(0))  # Fill nulls with 0
+    )
+
+    # Rename all columns except 'customer_id'
+    region_share = region_share.rename(
+        {
+            col: f"region_share_{col}"
+            for col in region_share.columns
+            if col != "customer_id"
+        }
+    )
+
+    return region_share
+
+
+def create_master_location_industrial(
+    prm_base_industrial: pl.DataFrame,
+    total_per_customer: pl.DataFrame,
+) -> pl.DataFrame:
+    """TODO: Add docstring for create_master_region_industrial function."""
+
+    location_share = (
+        prm_base_industrial.group_by(["customer_id", "localidad"])
+        .agg(pl.sum("volume").alias("volume_location"))
+        .join(total_per_customer, on="customer_id")
+        .with_columns(
+            (pl.col("volume_location") / pl.col("total_volume")).alias("location_share")
+        )
+        .select(["customer_id", "localidad", "location_share"])
+        .pivot(values="location_share", index="customer_id", columns="localidad")
+        .fill_null(pl.lit(0))  # Fill nulls with 0
+    )
+
+    # Rename all columns except 'customer_id'
+    location_share = location_share.rename(
+        {
+            col: f"location_share_{col}"
+            for col in location_share.columns
+            if col != "customer_id"
+        }
+    )
+
+    return location_share
+
+
+def create_master_planta_industrial(
+    prm_base_industrial: pl.DataFrame,
+    total_per_customer: pl.DataFrame,
+) -> pl.DataFrame:
+    """TODO: Add docstring for create_master_region_industrial function."""
+
+    planta_deposito_share = (
+        prm_base_industrial.group_by(["customer_id", "planta_deposito"])
+        .agg(pl.sum("volume").alias("volume_location"))
+        .join(total_per_customer, on="customer_id")
+        .with_columns(
+            (pl.col("volume_location") / pl.col("total_volume")).alias("location_share")
+        )
+        .select(["customer_id", "planta_deposito", "location_share"])
+        .pivot(values="location_share", index="customer_id", columns="planta_deposito")
+        .fill_null(pl.lit(0))  # Fill nulls with 0
+    )
+
+    # Rename all columns except 'customer_id'
+    planta_deposito_share = planta_deposito_share.rename(
+        {
+            col: f"planta_share_{col}"
+            for col in planta_deposito_share.columns
+            if col != "customer_id"
+        }
+    )
+
+    return planta_deposito_share

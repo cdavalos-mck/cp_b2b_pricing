@@ -1,0 +1,95 @@
+outliers_industrial:
+  features:
+    target: c_yearly_margin_per_liter
+  z_score_threshold: 3 # 3
+  base_quantile:
+    lower_quantile: 0
+    upper_quantile: 0.975
+first_stage_industrial:
+  cross_validation:
+    cv_folds: 10
+    scoring:
+      rmse: neg_root_mean_squared_error
+      mae: neg_mean_absolute_error
+      r2: r2
+      mape: neg_mean_absolute_percentage_error
+  filter:
+    threshold: 0.00 # 0.01 A mayor numero mas en Top Performers
+    use_minimum_margin:
+      enabled: False
+      min_margin_threshold: 10
+      min_volume_threshold: 5000000
+  algorithms:
+    # - lightgbm
+    - catboost
+  optimize_hyperparams: True
+  features:
+    target: c_yearly_margin_per_liter
+    categorical:
+    numerical:
+      comma_columns:
+        - total_volume
+      percent_columns:
+        - region_share_all
+  hyperparameters:
+    metric: mae
+    n_trials: 30
+    n_splits: 10
+    catboost:
+      depth:
+        type: int
+        low: 10 #2
+        high: 12 #6      # allow deeper trees
+      learning_rate:
+        type: float
+        low: 0.1 # allow slower learning
+        high: 0.3
+      l2_leaf_reg:
+        type: int
+        low: 1 # avoid extremely low values
+        high: 5 # stronger regularization allowed
+      iterations:
+        type: int
+        low: 1000
+        high: 1500
+second_stage_industrial:
+  cross_validation:
+    cv_folds: 10
+    scoring:
+      rmse: neg_root_mean_squared_error
+      mae: neg_mean_absolute_error
+      r2: r2
+      mape: neg_mean_absolute_percentage_error
+  algorithms:
+    # - lightgbm
+    - catboost
+  optimize_hyperparams: False
+  features:
+    target: c_yearly_margin_per_liter
+    categorical:
+    numerical:
+      comma_columns:
+        - total_volume
+      percent_columns:
+        - region_share_all
+  hyperparameters:
+    metric: mae
+    n_trials: 30
+    n_splits: 10
+    catboost:
+      depth:
+        type: int
+        low: 4
+        high: 8  # shallower trees
+      learning_rate:
+        type: float
+        low: 0.01
+        high: 0.05  # slower learning
+      l2_leaf_reg:
+        type: int
+        low: 5
+        high: 10  # stronger regularization
+      iterations:
+        type: int
+        low: 500
+        high: 1000  # let early stopping handle training length

@@ -1,13 +1,13 @@
 outliers:
   features:
     target: c_yearly_margin_per_liter
-  z_score_threshold: 3 # 3
+  z_score_threshold: 2.5 # 3
   base_quantile:
     lower_quantile: 0
     upper_quantile: 0.975
   frequent_clients:
-    min_perc_week_threshold: 0.8
-    days_since_last_trx_threshold: 60
+    min_perc_week_threshold: 0.8 # Numero Semanas en el Año * 60% = 32
+    days_since_last_trx_threshold: 30
 clustering:
   algorithm: kmeans
   min_cluster_size: 1
@@ -55,9 +55,9 @@ first_stage:
   filter:
     threshold: 0.00 # 0.01 A mayor numero mas en Top Performers
     use_minimum_margin:
-      enabled: False
-      min_margin_threshold: 20
-      min_volume_threshold: 1500000
+      enabled: True
+      min_margin_threshold: 15
+      min_volume_threshold: 5000000
   algorithms:
     # - lightgbm
     - catboost
@@ -104,7 +104,7 @@ first_stage:
         low: 0.1 # allow slower learning
         high: 0.3
       l2_leaf_reg:
-        type: float
+        type: int
         low: 1 # avoid extremely low values
         high: 5 # stronger regularization allowed
       iterations:
@@ -122,7 +122,7 @@ second_stage:
   algorithms:
     # - lightgbm
     - catboost
-  optimize_hyperparams: True
+  optimize_hyperparams: False
   features:
     target: c_yearly_margin_per_liter
     categorical:
@@ -158,8 +158,8 @@ second_stage:
         - c_tct_yearly_perc_volume
   hyperparameters:
     metric: mae
-    n_trials: 2
-    n_splits: 2
+    n_trials: 30
+    n_splits: 10
     catboost:
       depth:
         type: int
@@ -170,9 +170,9 @@ second_stage:
         low: 0.01
         high: 0.05  # slower learning
       l2_leaf_reg:
-        type: float
+        type: int
         low: 5
-        high: 20  # stronger regularization
+        high: 10  # stronger regularization
       iterations:
         type: int
         low: 500

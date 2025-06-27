@@ -13,9 +13,14 @@ def register_pipelines() -> dict[str, Pipeline]:
         A mapping from pipeline names to ``Pipeline`` objects.
     """
     pipelines = find_pipelines()
-    pipelines["__default__"] = sum(pipelines.values())
+    pipelines["__default__"] = (
+        data_processing.create_pipeline()
+        + data_science.create_pipeline()
+        + data_science.create_segments_pipeline()
+    )
     pipelines["data_engineering"] = data_processing.create_pipeline()
     pipelines["data_science"] = data_science.create_pipeline()
     pipelines["pricing"] = data_science.create_pricing_pipeline()
     pipelines["segments"] = data_science.create_segments_pipeline()
+    pipelines["pricing_industrial"] = data_science.create_pricing_industrial_pipeline()
     return pipelines

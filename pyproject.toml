@@ -30,6 +30,9 @@ dependencies = [
     "fsspec>=2025.5.1",
     "boto3>=1.38.37",
     "shap>=0.48.0",
+    "numpy>=2.0.2",
+    "umap-learn>=0.5.7",
+    "kneed>=0.8.5",
 ]
 
 [project.scripts]

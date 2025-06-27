@@ -147,7 +147,10 @@ class ModelOptimizer:
         # Handle group-based cross-validation
         X_train = X.copy()
 
-        revenue = X["c_yearly_network_volumen"]  # * y
+        try:
+            revenue = X["c_yearly_network_volumen"]  # * y
+        except:
+            revenue = X["total_volume"]  # * y
 
         # weight = np.log1p(revenue)
         weight = revenue / revenue.sum()
@@ -181,7 +184,7 @@ class ModelOptimizer:
             monotone_constraints = [0] * len(feature_names)
             for idx, fname in enumerate(feature_names):
                 if fname.endswith(
-                    "c_yearly_network_volumen"
+                    ("c_yearly_network_volumen", "total_volume")
                 ):  # or fname == "num__volume" if you know the prefix
                     monotone_constraints[idx] = 0
 
@@ -298,7 +301,10 @@ class RegressionModel:
         customer_id = data["customer_id"]
         y = data[self.target_feature]
 
-        revenue = X["c_yearly_network_volumen"]  # * y
+        try:
+            revenue = X["c_yearly_network_volumen"]  # * y
+        except:
+            revenue = X["total_volume"]  # * y
 
         # weight = np.log1p(revenue)
         weight = revenue / revenue.sum()
@@ -333,7 +339,7 @@ class RegressionModel:
                 monotone_constraints = [0] * len(feature_names)
                 for idx, fname in enumerate(feature_names):
                     if fname.endswith(
-                        "c_yearly_network_volumen"
+                        ("c_yearly_network_volumen", "total_volume")
                     ):  # or fname == "num__volume" if you know the prefix
                         monotone_constraints[idx] = 0
 
@@ -620,7 +626,7 @@ class ClusteringPipeline:
             raise ValueError("You must call preprocess_data before getting neighbors.")
 
         # knn = NearestNeighbors(n_neighbors=k + 1, metric=metric)
-        knn = NearestNeighbors(radius=0.1, metric=metric)
+        knn = NearestNeighbors(radius=0.4, metric=metric)
         knn.fit(self.X_scaled)
         distances, indices = knn.radius_neighbors(self.X_scaled)
 
@@ -654,7 +660,7 @@ class ClusteringPipeline:
         metric="euclidean",
         performance_labels=None,
         top_label="Top Performer",
-        radius=0.1,
+        radius=0.2,
     ):
         """
         Find top performer neighbors for each customer. Prioritize using radius-based neighbors;
