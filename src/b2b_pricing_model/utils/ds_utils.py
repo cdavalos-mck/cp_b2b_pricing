@@ -184,14 +184,18 @@ class ModelOptimizer:
             monotone_constraints = [0] * len(feature_names)
             for idx, fname in enumerate(feature_names):
                 if fname.endswith(
-                    ("c_yearly_network_volumen", "total_volume")
+                    (
+                        "c_yearly_network_volumen",
+                        "total_volume",
+                        "competitive_index",
+                    )
                 ):  # or fname == "num__volume" if you know the prefix
-                    monotone_constraints[idx] = 0
+                    monotone_constraints[idx] = -1
 
-            # if algorithm_name.lower() == "lightgbm":
-            #     params_config["monotone_constraints"] = monotone_constraints
-            # elif algorithm_name.lower() == "catboost":
-            #     params_config["monotone_constraints"] = monotone_constraints
+            if algorithm_name.lower() == "lightgbm":
+                params_config["monotone_constraints"] = monotone_constraints
+            elif algorithm_name.lower() == "catboost":
+                params_config["monotone_constraints"] = monotone_constraints
 
             pipeline = _create_pipeline(
                 algorithm_name=algorithm_name,
@@ -339,14 +343,18 @@ class RegressionModel:
                 monotone_constraints = [0] * len(feature_names)
                 for idx, fname in enumerate(feature_names):
                     if fname.endswith(
-                        ("c_yearly_network_volumen", "total_volume")
+                        (
+                            "c_yearly_network_volumen",
+                            "total_volume",
+                            "competitive_index",
+                        )
                     ):  # or fname == "num__volume" if you know the prefix
-                        monotone_constraints[idx] = 0
+                        monotone_constraints[idx] = -1
 
-                # if algorithm_name.lower() == "lightgbm":
-                #     params_config["monotone_constraints"] = monotone_constraints
-                # elif algorithm_name.lower() == "catboost":
-                #     params_config["monotone_constraints"] = monotone_constraints
+                if algorithm_name.lower() == "lightgbm":
+                    params_config["monotone_constraints"] = monotone_constraints
+                elif algorithm_name.lower() == "catboost":
+                    params_config["monotone_constraints"] = monotone_constraints
 
                 pipeline = _create_pipeline(
                     algorithm_name=algorithm_name,
