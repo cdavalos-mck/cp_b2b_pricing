@@ -3,11 +3,10 @@ from kedro.pipeline import Pipeline, node, pipeline
 from .nodes import (
     create_clients_to_remove,
     create_master_industrial,
-    create_master_location_industrial,
     create_master_monthly_tct_trx,
     create_master_patentes,
     create_master_planta_industrial,
-    create_master_region_industrial,
+    create_master_rubro_industrial,
     create_master_total_industrial,
     create_master_transactions,
     create_master_transactions_channel,
@@ -231,24 +230,6 @@ def create_pipeline(**kwargs) -> Pipeline:
                 name="create_master_total_industrial",
             ),
             node(
-                func=create_master_region_industrial,
-                inputs=[
-                    "prm_base_industrial",
-                    "master_total_industrial",
-                ],
-                outputs="master_region_industrial",
-                name="create_master_region_industrial",
-            ),
-            node(
-                func=create_master_location_industrial,
-                inputs=[
-                    "prm_base_industrial",
-                    "master_total_industrial",
-                ],
-                outputs="master_location_industrial",
-                name="create_master_location_industrial",
-            ),
-            node(
                 func=create_master_planta_industrial,
                 inputs=[
                     "prm_base_industrial",
@@ -258,13 +239,21 @@ def create_pipeline(**kwargs) -> Pipeline:
                 name="create_master_planta_industrial",
             ),
             node(
+                func=create_master_rubro_industrial,
+                inputs=[
+                    "prm_base_industrial",
+                    "master_total_industrial",
+                ],
+                outputs="master_rubro_industrial",
+                name="create_master_rubro_industrial",
+            ),
+            node(
                 func=create_master_industrial,
                 inputs=[
                     "spine_industrial",
                     "master_total_industrial",
-                    "master_region_industrial",
-                    "master_location_industrial",
                     "master_planta_industrial",
+                    "master_rubro_industrial",
                 ],
                 outputs="master_industrial",
                 name="create_master_industrial",

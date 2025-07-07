@@ -44,7 +44,7 @@ raw_base_industrial:
   filepath: data/01_raw/base_industrial.csv
   load_args:
     separator: ","
-    infer_schema_length: 10000
+    infer_schema_length: 100000
     truncate_ragged_lines: True
 
 raw_base_cupon_electronico:
@@ -85,6 +85,14 @@ raw_maestro_data:
 raw_patentes:
   type: polars.CSVDataset
   filepath: data/01_raw/patentes.csv
+
+mst_transactions_channel:
+  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
+  filepath: data/02_intermediate/mst_transactions_channel_${globals:channel}.parquet
+  load_args: {}
+  save_args:
+    compression: "snappy"
+
 master_trx_customer_tct:
   type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
   filepath: data/03_primary/master_trx_customer_tct_${globals:channel}.parquet
@@ -121,7 +129,7 @@ default_second_stage_best_hyperparameters:
 
 default_second_stage_best_hyperparameters_industrial:
   type: json.JSONDataset
-  filepath: data/06_models/default_second_stage_best_hyperparameters_industrial_${globals:channel}.json
+  filepath: data/06_models/default_second_stage_best_hyperparameters_industrial.json
 
 first_stage_cv_results:
   type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
@@ -179,6 +187,20 @@ second_stage_predictions:
   save_args:
     compression: "snappy"
 
+second_stage_predictions_tae:
+  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
+  filepath: data/07_model_output/second_stage_predictions_tae.parquet
+  load_args: {}
+  save_args:
+    compression: "snappy"
+
+second_stage_predictions_tct:
+  type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
+  filepath: data/07_model_output/second_stage_predictions_tct.parquet
+  load_args: {}
+  save_args:
+    compression: "snappy"
+
 second_stage_industrial_predictions:
   type: b2b_pricing_model.datasets.polars_parquet_dataset.PolarsParquetDataset
   filepath: data/07_model_output/second_stage_presecond_stage_industrial_predictionsdictions_${globals:channel}.parquet
@@ -190,13 +212,29 @@ explanation:
   type: pandas.CSVDataset
   filepath: data/07_model_output/explanation_${globals:channel}.csv
 
+explanation_tae:
+  type: pandas.CSVDataset
+  filepath: data/07_model_output/explanation_tae.csv
+
+explanation_tct:
+  type: pandas.CSVDataset
+  filepath: data/07_model_output/explanation_tct.csv
+
 explanation_industrial:
   type: pandas.CSVDataset
   filepath: data/07_model_output/explanation_industrial.csv
 
 closest_customers_detail:
   type: pandas.CSVDataset
-  filepath: data/07_model_output/closest_customers_detail.csv
+  filepath: data/07_model_output/closest_customers_detail_${globals:channel}.csv
+
+closest_customers_detail_tae:
+  type: pandas.CSVDataset
+  filepath: data/07_model_output/closest_customers_detail_tae.csv
+
+closest_customers_detail_tct:
+  type: pandas.CSVDataset
+  filepath: data/07_model_output/closest_customers_detail_tct.csv
 
 closest_customers_detail_industrial:
   type: pandas.CSVDataset
@@ -204,7 +242,15 @@ closest_customers_detail_industrial:
 
 second_stage_shap_value:
   type: pickle.PickleDataset
-  filepath: data/07_model_output/second_stage_shap_value.pkl
+  filepath: data/07_model_output/second_stage_shap_value_${globals:channel}.pkl
+
+second_stage_shap_value_tae:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_shap_value_tae.pkl
+
+second_stage_shap_value_tct:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_shap_value_tct.pkl
 
 second_stage_industrial_shap_value:
   type: pickle.PickleDataset
@@ -212,7 +258,15 @@ second_stage_industrial_shap_value:
 
 second_stage_customer_id:
   type: pickle.PickleDataset
-  filepath: data/07_model_output/second_stage_customer_id.pkl
+  filepath: data/07_model_output/second_stage_customer_id_${globals:channel}.pkl
+
+second_stage_customer_id_tae:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_customer_id_tae.pkl
+
+second_stage_customer_id_tct:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_customer_id_tct.pkl
 
 second_stage_industrial_customer_id:
   type: pickle.PickleDataset
@@ -220,7 +274,15 @@ second_stage_industrial_customer_id:
 
 second_stage_feature_names:
   type: pickle.PickleDataset
-  filepath: data/07_model_output/second_stage_feature_names.pkl
+  filepath: data/07_model_output/second_stage_feature_names_${globals:channel}.pkl
+
+second_stage_feature_names_tae:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_feature_names_tae.pkl
+
+second_stage_feature_names_tct:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_feature_names_tct.pkl
 
 second_stage_industrial_feature_names:
   type: pickle.PickleDataset
@@ -228,7 +290,15 @@ second_stage_industrial_feature_names:
 
 second_stage_explainer:
   type: pickle.PickleDataset
-  filepath: data/07_model_output/second_stage_explainer.pkl
+  filepath: data/07_model_output/second_stage_explainer_${globals:channel}.pkl
+
+second_stage_explainer_tae:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_explainer_tae.pkl
+
+second_stage_explainer_tct:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_explainer_tct.pkl
 
 second_stage_industrial_explainer:
   type: pickle.PickleDataset
@@ -236,7 +306,15 @@ second_stage_industrial_explainer:
 
 second_stage_X:
   type: pickle.PickleDataset
-  filepath: data/07_model_output/second_stage_X.pkl
+  filepath: data/07_model_output/second_stage_X_${globals:channel}.pkl
+
+second_stage_X_tae:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_X_tae.pkl
+
+second_stage_X_tct:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/second_stage_X_tct.pkl
 
 second_stage_industrial_X:
   type: pickle.PickleDataset
@@ -248,3 +326,11 @@ non_regular_clients_predictions:
   load_args: {}
   save_args:
     compression: "snappy"
+
+detalle_estaciones:
+  type: polars.CSVDataset
+  filepath: data/01_raw/estaciones_pricing.csv
+  load_args:
+    separator: ";"
+    infer_schema_length: 10000
+    truncate_ragged_lines: True

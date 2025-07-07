@@ -41,12 +41,12 @@ clustering:
         - share_customer_region_1
         - share_customer_region_11
         - share_customer_region_12
-        - c_tct_yearly_perc_volume
+        # - c_tct_yearly_perc_volume
   standardize_method: standard
-  k_neighbors: 5
+  k_neighbors: 10
 first_stage:
   cross_validation:
-    cv_folds: 10
+    cv_folds: 5
     scoring:
       rmse: neg_root_mean_squared_error
       mae: neg_mean_absolute_error
@@ -55,8 +55,8 @@ first_stage:
   filter:
     threshold: 0.00 # 0.01 A mayor numero mas en Top Performers
     use_minimum_margin:
-      enabled: True
-      min_margin_threshold: 15
+      enabled: False
+      min_margin_threshold: 9
       min_volume_threshold: 5000000
   algorithms:
     # - lightgbm
@@ -89,7 +89,7 @@ first_stage:
         - share_customer_region_1
         - share_customer_region_11
         - share_customer_region_12
-        - c_tct_yearly_perc_volume
+        # - c_tct_yearly_perc_volume
   hyperparameters:
     metric: mae
     n_trials: 30
@@ -113,7 +113,7 @@ first_stage:
         high: 1500
 second_stage:
   cross_validation:
-    cv_folds: 10
+    cv_folds: 5
     scoring:
       rmse: neg_root_mean_squared_error
       mae: neg_mean_absolute_error
@@ -155,7 +155,7 @@ second_stage:
         - share_customer_region_1
         - share_customer_region_11
         - share_customer_region_12
-        - c_tct_yearly_perc_volume
+        # - c_tct_yearly_perc_volume
   hyperparameters:
     metric: mae
     n_trials: 30

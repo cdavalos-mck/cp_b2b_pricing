@@ -5,7 +5,7 @@ from ..pricing_model.nodes import (
     predict_first_stage,
     train_model,
 )
-from .nodes import create_master_base, predict_second_stage
+from .nodes import create_master_base, filter_ood_clients, predict_second_stage
 
 
 def create_pipeline(**kwargs) -> Pipeline:
@@ -83,12 +83,29 @@ def create_pipeline(**kwargs) -> Pipeline:
                 name="train_second_stage_industrial_model",
             ),
             node(
+                func=filter_ood_clients,
+                inputs=[
+                    "params:second_stage_industrial",
+                    "top_performers_industrial",
+                    # "non_regular_clients_tct",
+                    "under_performers_industrial",
+                    "regular_outlier_clients_industrial",
+                ],
+                outputs=[
+                    "under_performers_industrial_with_scores",
+                    # "non_regular_clients_with_scores",
+                    "regular_outlier_clients_industrial_with_scores",
+                ],
+                name="filter_ood_clients",
+            ),
+            node(
                 func=predict_second_stage,
                 inputs=[
                     "params:second_stage_industrial",
                     "best_second_stage_industrial_model",
-                    "under_performers_industrial",
+                    "under_performers_industrial_with_scores",
                     "top_performers_industrial",
+                    "regular_outlier_clients_industrial_with_scores",
                 ],
                 outputs=[
                     "second_stage_industrial_predictions",

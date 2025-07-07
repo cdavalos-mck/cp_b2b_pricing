@@ -1,13 +1,13 @@
 outliers_industrial:
   features:
     target: c_yearly_margin_per_liter
-  z_score_threshold: 3 # 3
+  z_score_threshold: 2.3 # 3
   base_quantile:
     lower_quantile: 0
     upper_quantile: 0.975
 first_stage_industrial:
   cross_validation:
-    cv_folds: 10
+    cv_folds: 5
     scoring:
       rmse: neg_root_mean_squared_error
       mae: neg_mean_absolute_error
@@ -22,7 +22,7 @@ first_stage_industrial:
   algorithms:
     # - lightgbm
     - catboost
-  optimize_hyperparams: True
+  optimize_hyperparams: False
   features:
     target: c_yearly_margin_per_liter
     categorical:
@@ -30,16 +30,43 @@ first_stage_industrial:
       comma_columns:
         - total_volume
       percent_columns:
-        - region_share_all
+        - planta_share_1627
+        - planta_share_1205
+        - planta_share_1210
+        - planta_share_1204
+        - planta_share_1228
+        - planta_share_1208
+        - planta_share_1212
+        - planta_share_1215
+        - planta_share_SIN INFORMACION
+        - planta_share_1211
+        - planta_share_1207
+        - planta_share_1206
+        - planta_share_1201
+        - planta_share_1202
+        - planta_share_1216
+        - planta_share_1214
+        - planta_share_1213
+        - planta_share_1203
+        - planta_share_1566
+        - rubro_share_6
+        - rubro_share_7
+        - rubro_share_others
+        - rubro_share_26
+        - rubro_share_22
+        - rubro_share_24
+        - rubro_share_27
+        - rubro_share_15
+        - rubro_share_29
   hyperparameters:
     metric: mae
     n_trials: 30
-    n_splits: 10
+    n_splits: 5
     catboost:
       depth:
         type: int
         low: 10 #2
-        high: 12 #6      # allow deeper trees
+        high: 14 #6      # allow deeper trees
       learning_rate:
         type: float
         low: 0.1 # allow slower learning
@@ -51,10 +78,10 @@ first_stage_industrial:
       iterations:
         type: int
         low: 1000
-        high: 1500
+        high: 2000
 second_stage_industrial:
   cross_validation:
-    cv_folds: 10
+    cv_folds: 5
     scoring:
       rmse: neg_root_mean_squared_error
       mae: neg_mean_absolute_error
@@ -71,16 +98,43 @@ second_stage_industrial:
       comma_columns:
         - total_volume
       percent_columns:
-        - region_share_all
+        - planta_share_1627
+        - planta_share_1205
+        - planta_share_1210
+        - planta_share_1204
+        - planta_share_1228
+        - planta_share_1208
+        - planta_share_1212
+        - planta_share_1215
+        - planta_share_SIN INFORMACION
+        - planta_share_1211
+        - planta_share_1207
+        - planta_share_1206
+        - planta_share_1201
+        - planta_share_1202
+        - planta_share_1216
+        - planta_share_1214
+        - planta_share_1213
+        - planta_share_1203
+        - planta_share_1566
+        - rubro_share_6
+        - rubro_share_7
+        - rubro_share_others
+        - rubro_share_26
+        - rubro_share_22
+        - rubro_share_24
+        - rubro_share_27
+        - rubro_share_15
+        - rubro_share_29
   hyperparameters:
     metric: mae
     n_trials: 30
-    n_splits: 10
+    n_splits: 5
     catboost:
       depth:
         type: int
         low: 4
-        high: 8  # shallower trees
+        high: 6  # shallower trees
       learning_rate:
         type: float
         low: 0.01

@@ -2,6 +2,7 @@ from kedro.pipeline import Pipeline, node, pipeline
 
 from .nodes import (
     create_master_base,
+    filter_ood_clients,
     get_best_hyperparameters,
     predict_first_stage,
     predict_second_stage,
@@ -18,7 +19,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                 outputs=[
                     "non_regular_clients_tct",
                     "regular_base_clients_tct",
-                    "regular_outlier_clients_tct",
+                    "regular_outlier_clients",
                 ],
                 name="create_master_base_tct",
             ),
@@ -85,13 +86,30 @@ def create_pipeline(**kwargs) -> Pipeline:
                 name="train_second_stage_model",
             ),
             node(
+                func=filter_ood_clients,
+                inputs=[
+                    "params:second_stage",
+                    "top_performers",
+                    "non_regular_clients_tct",
+                    "under_performers",
+                    "regular_outlier_clients",
+                ],
+                outputs=[
+                    "under_performers_with_scores",
+                    "non_regular_clients_with_scores",
+                    "regular_outlier_clients_with_scores",
+                ],
+                name="filter_ood_clients",
+            ),
+            node(
                 func=predict_second_stage,
                 inputs=[
                     "params:second_stage",
                     "best_second_stage_model",
-                    "under_performers",
+                    "under_performers_with_scores",
                     "top_performers",
-                    "non_regular_clients_tct",
+                    "non_regular_clients_with_scores",
+                    "regular_outlier_clients_with_scores",
                 ],
                 outputs=[
                     "second_stage_predictions",

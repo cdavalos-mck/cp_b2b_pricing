@@ -221,7 +221,7 @@ class ModelOptimizer:
                     y,
                     cv=splits,
                     scoring=METRICS[metric],
-                    fit_params={"regressor__sample_weight": weight},
+                    # fit_params={"regressor__sample_weight": weight},
                     n_jobs=-1,
                     error_score="raise",
                 )
@@ -433,7 +433,7 @@ class RegressionModel:
             y,
             cv=splits,  # pass list of (train_idx, test_idx)
             scoring=scoring_funcs,
-            fit_params={"regressor__sample_weight": weight},
+            # fit_params={"regressor__sample_weight": weight},
             return_train_score=True,
             n_jobs=-1,
         )
@@ -703,37 +703,22 @@ class ClusteringPipeline:
         customer_ids = np.array(customer_ids)
         performance_labels = np.array(performance_labels)
 
-        radius_knn = NearestNeighbors(radius=radius, metric=metric)
-        radius_knn.fit(self.X_scaled)
-        radius_distances, radius_indices = radius_knn.radius_neighbors(self.X_scaled)
-
         knn = NearestNeighbors(n_neighbors=k + 1, metric=metric)  # +1 to include self
         knn.fit(self.X_scaled)
         knn_distances, knn_indices = knn.kneighbors(self.X_scaled)
 
         records = []
-        for i, (r_idxs, r_dists) in enumerate(zip(radius_indices, radius_distances)):
+        for i, (k_idxs, k_dists) in enumerate(zip(knn_indices, knn_distances)):
             src_id = customer_ids[i]
 
-            # Filter radius-based neighbors
-            radius_filtered = [
+            # Skip self (first neighbor)
+            neighbors = [
                 (idx, dist)
-                for idx, dist in zip(r_idxs, r_dists)
-                if idx != i and performance_labels[idx] == top_label
-            ][:10]
+                for idx, dist in zip(k_idxs[1:], k_dists[1:])  # Skip self
+                if performance_labels[idx] == top_label
+            ][:k]  # Ensure only up to k neighbors
 
-            if radius_filtered:
-                selected_neighbors = radius_filtered
-            else:
-                # Use k-nearest neighbors if radius search yields none
-                k_idxs, k_dists = knn_indices[i], knn_distances[i]
-                selected_neighbors = [
-                    (idx, dist)
-                    for idx, dist in zip(k_idxs[1:], k_dists[1:])  # skip self
-                    if performance_labels[idx] == top_label
-                ][:k]
-
-            for rank, (neighbor_idx, dist) in enumerate(selected_neighbors, start=1):
+            for rank, (neighbor_idx, dist) in enumerate(neighbors, start=1):
                 neighbor_id = customer_ids[neighbor_idx]
                 records.append(
                     {

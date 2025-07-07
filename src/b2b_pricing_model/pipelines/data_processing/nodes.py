@@ -10,7 +10,6 @@ from b2b_pricing_model.utils.dp_utils import (
     _validate_customer_id,
     calculate_weekly_transaction,
     clean_polars_column_names,
-    clean_string_value,
 )
 
 logger = logging.getLogger(__name__)
@@ -38,7 +37,10 @@ def preprocess_columns(df: pl.DataFrame) -> pl.DataFrame:
 
     df = clean_polars_column_names(df)
     if "customer_id" in df.columns:
-        df = df.with_columns(pl.col("customer_id").cast(pl.Int64).cast(pl.String))
+        try:
+            df = df.with_columns(pl.col("customer_id").cast(pl.Int64).cast(pl.String))
+        except:
+            df = df.with_columns(pl.col("customer_id").cast(pl.String))
 
     return df
 
@@ -109,26 +111,14 @@ def process_base_industrial(df: pl.DataFrame) -> pl.DataFrame:
     TODO: Add docstring for process_base_industrial function.
     """
 
-    df = df.with_columns(
-        pl.when(pl.col("localidad").is_null())
-        .then(pl.lit("Sin Localidad"))
-        .otherwise(pl.col("localidad"))
-        .alias("localidad")
-    )
+    # TODO: Definir procesamiento que se realizo en Excel para la base industrial
+    """
+    - Remover clientes licitados
+    - Remover volumen 0
+    - Remover clientes con Revenue Negativo
+    - Agrupar Rubros pequenos en "Otros Rubros"
 
-    df = df.with_columns(
-        pl.col("planta_deposito")
-        .map_elements(clean_string_value)
-        .alias("planta_deposito")
-    )
-
-    df = df.with_columns(
-        pl.col("localidad").map_elements(clean_string_value).alias("localidad")
-    )
-
-    df = df.with_columns(
-        pl.col("region").map_elements(clean_string_value).alias("region")
-    )
+    """
 
     return df
 
@@ -506,6 +496,8 @@ def create_master_transactions(
     df_ = df_.filter(
         pl.col("codigo_region").is_not_null() & (pl.col("codigo_region") != "")
     )
+
+    df_ = df_.filter(pl.col("producto") == "diesel")
 
     return df_
 
@@ -953,9 +945,8 @@ def create_master_trx_customer_tct(  # noqa: PLR0913
 def create_master_industrial(
     spine_industrial: pl.DataFrame,
     master_total_industrial: pl.DataFrame,
-    master_region_industrial: pl.DataFrame,
-    master_location_industrial: pl.DataFrame,
     master_planta_industrial: pl.DataFrame,
+    master_rubro_industrial: pl.DataFrame,
 ) -> pl.DataFrame:
     """TODO: Add docstring for create_master_industrial function."""
     master_industrial = spine_industrial.join(
@@ -963,23 +954,17 @@ def create_master_industrial(
     )
 
     master_industrial = master_industrial.join(
-        master_region_industrial, on="customer_id", how="left"
-    )
-
-    master_industrial = master_industrial.join(
-        master_location_industrial, on="customer_id", how="left"
-    )
-
-    master_industrial = master_industrial.join(
         master_planta_industrial, on="customer_id", how="left"
+    )
+
+    master_industrial = master_industrial.join(
+        master_rubro_industrial, on="customer_id", how="left"
     )
 
     # Fill nulls with 0
     master_industrial = master_industrial.fill_null(0)
 
     master_industrial = master_industrial.filter(pl.col("total_volume") > 0)
-    master_industrial = master_industrial.filter(pl.col("total_revenue") > 0)
-
     return master_industrial
 
 
@@ -1013,66 +998,6 @@ def create_master_total_industrial(
     return total_per_customer
 
 
-def create_master_region_industrial(
-    prm_base_industrial: pl.DataFrame,
-    total_per_customer: pl.DataFrame,
-) -> pl.DataFrame:
-    """TODO: Add docstring for create_master_region_industrial function."""
-
-    region_share = (
-        prm_base_industrial.group_by(["customer_id", "region"])
-        .agg(pl.sum("volume").alias("volume_region"))
-        .join(total_per_customer, on="customer_id")
-        .with_columns(
-            (pl.col("volume_region") / pl.col("total_volume")).alias("region_share")
-        )
-        .select(["customer_id", "region", "region_share"])
-        .pivot(values="region_share", index="customer_id", columns="region")
-        .fill_null(pl.lit(0))  # Fill nulls with 0
-    )
-
-    # Rename all columns except 'customer_id'
-    region_share = region_share.rename(
-        {
-            col: f"region_share_{col}"
-            for col in region_share.columns
-            if col != "customer_id"
-        }
-    )
-
-    return region_share
-
-
-def create_master_location_industrial(
-    prm_base_industrial: pl.DataFrame,
-    total_per_customer: pl.DataFrame,
-) -> pl.DataFrame:
-    """TODO: Add docstring for create_master_region_industrial function."""
-
-    location_share = (
-        prm_base_industrial.group_by(["customer_id", "localidad"])
-        .agg(pl.sum("volume").alias("volume_location"))
-        .join(total_per_customer, on="customer_id")
-        .with_columns(
-            (pl.col("volume_location") / pl.col("total_volume")).alias("location_share")
-        )
-        .select(["customer_id", "localidad", "location_share"])
-        .pivot(values="location_share", index="customer_id", columns="localidad")
-        .fill_null(pl.lit(0))  # Fill nulls with 0
-    )
-
-    # Rename all columns except 'customer_id'
-    location_share = location_share.rename(
-        {
-            col: f"location_share_{col}"
-            for col in location_share.columns
-            if col != "customer_id"
-        }
-    )
-
-    return location_share
-
-
 def create_master_planta_industrial(
     prm_base_industrial: pl.DataFrame,
     total_per_customer: pl.DataFrame,
@@ -1080,14 +1005,14 @@ def create_master_planta_industrial(
     """TODO: Add docstring for create_master_region_industrial function."""
 
     planta_deposito_share = (
-        prm_base_industrial.group_by(["customer_id", "planta_deposito"])
+        prm_base_industrial.group_by(["customer_id", "plant_id"])
         .agg(pl.sum("volume").alias("volume_location"))
         .join(total_per_customer, on="customer_id")
         .with_columns(
             (pl.col("volume_location") / pl.col("total_volume")).alias("location_share")
         )
-        .select(["customer_id", "planta_deposito", "location_share"])
-        .pivot(values="location_share", index="customer_id", columns="planta_deposito")
+        .select(["customer_id", "plant_id", "location_share"])
+        .pivot(values="location_share", index="customer_id", columns="plant_id")
         .fill_null(pl.lit(0))  # Fill nulls with 0
     )
 
@@ -1095,6 +1020,36 @@ def create_master_planta_industrial(
     planta_deposito_share = planta_deposito_share.rename(
         {
             col: f"planta_share_{col}"
+            for col in planta_deposito_share.columns
+            if col != "customer_id"
+        }
+    )
+
+    return planta_deposito_share
+
+
+def create_master_rubro_industrial(
+    prm_base_industrial: pl.DataFrame,
+    total_per_customer: pl.DataFrame,
+) -> pl.DataFrame:
+    """TODO: Add docstring for create_master_region_industrial function."""
+
+    planta_deposito_share = (
+        prm_base_industrial.group_by(["customer_id", "new_rubro_id"])
+        .agg(pl.sum("volume").alias("volume_location"))
+        .join(total_per_customer, on="customer_id")
+        .with_columns(
+            (pl.col("volume_location") / pl.col("total_volume")).alias("location_share")
+        )
+        .select(["customer_id", "new_rubro_id", "location_share"])
+        .pivot(values="location_share", index="customer_id", columns="new_rubro_id")
+        .fill_null(pl.lit(0))  # Fill nulls with 0
+    )
+
+    # Rename all columns except 'customer_id'
+    planta_deposito_share = planta_deposito_share.rename(
+        {
+            col: f"rubro_share_{col}"
             for col in planta_deposito_share.columns
             if col != "customer_id"
         }
